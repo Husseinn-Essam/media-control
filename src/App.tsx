@@ -24,7 +24,6 @@ function App() {
       </div>
       <h1 className="">Media Control</h1>
 
-      <UpdateElectron />
     </div>
   );
 }
