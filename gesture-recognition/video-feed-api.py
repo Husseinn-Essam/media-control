@@ -1,8 +1,10 @@
 from flask import Flask, Response, jsonify, request
 import cv2
 import threading
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 cap = cv2.VideoCapture(0)
 
@@ -41,7 +43,7 @@ def video_feed():
 
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/recognize_gesture', methods=['POST'])
+@app.route('/recognize_gesture', methods=['GET'])
 def recognize_gesture():
     """Process the current frame for gesture recognition."""
     with frame_lock:
@@ -58,7 +60,7 @@ def recognize_gesture():
         gesture_detected = "Unknown"
         if num_contours > 0:
             gesture_detected = "Hand Detected"
-
+        print(f"Gesture: {gesture_detected}, Contours: {num_contours}")
         return jsonify({
             "gesture": gesture_detected,
             "contours": num_contours
