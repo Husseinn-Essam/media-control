@@ -18,11 +18,17 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
     const [channel, ...omit] = args
     return ipcRenderer.invoke(channel, ...omit)
   },
-
+  
   // You can expose other APTs you need here.
   // ...
+  
 })
 
+// python code handling api
+contextBridge.exposeInMainWorld('electronAPI', {
+  sendToPython: (message: any) => ipcRenderer.send('to-python', message),
+  receiveFromPython: (callback: (data: any) => void) => ipcRenderer.on('from-python', (_, data) => callback(data))
+});
 // --------- Preload scripts loading ---------
 function domReady(condition: DocumentReadyState[] = ['complete', 'interactive']) {
   return new Promise(resolve => {

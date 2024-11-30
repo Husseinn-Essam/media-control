@@ -6,6 +6,9 @@ import os from 'node:os'
 import { update } from './update'
 
 const require = createRequire(import.meta.url)
+
+const { spawn } = require('child_process');
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 Menu.setApplicationMenu(null);
 
@@ -84,6 +87,35 @@ async function createWindow() {
 }
 
 app.whenReady().then(createWindow)
+
+// python code handling
+const pythonProcess = spawn('python', [path.join(__dirname, '../../pyscript.py')]);
+
+// sends data to python
+ipcMain.on('to-python', (event, message) => {
+  pythonProcess.stdin.write(JSON.stringify(message) + '\n');
+});
+
+// sends data to renderer
+pythonProcess.stdout.on('data', (data: any) => {
+  const response = data.toString().trim();
+  console.log('Response from Python:', response);
+
+  try {
+    const jsonResponse = JSON.parse(response);
+
+    if (win) {
+      win.webContents.send('from-python', jsonResponse);
+    }
+  } catch (error) {
+    console.error('Error parsing response from Python:', error);
+  }
+});
+
+// error handling for python
+pythonProcess.stderr.on('data', (data:any) => {
+  console.error(`Python error: ${data}`);
+});
 
 app.on('window-all-closed', () => {
   win = null

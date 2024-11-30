@@ -18,7 +18,8 @@
     "pree2e": "vite build --mode=test"
   },
   "dependencies": {
-    "electron-updater": "^6.1.8"
+    "electron-updater": "^6.1.8",
+    "react-router-dom": "^7.0.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.64",
