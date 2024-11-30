@@ -13,6 +13,9 @@ npm install
 
 # Develop
 npm run dev
+
+## to start backend
+## run the video-feed-api.py
 ```
 ## notes
 - feed-extract.py was just for testing opencv
