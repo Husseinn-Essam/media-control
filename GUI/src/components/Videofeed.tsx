@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const VideoFeed = () => {
   const [gesture, setGesture] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const navigate = useNavigate();
+  const handleNavigate = () => {
+    navigate("/"); 
+  };
   useEffect(() => {
     // Function to fetch gesture data
     const fetchGesture = async () => {
@@ -11,7 +16,7 @@ const VideoFeed = () => {
         const response = await fetch(
           "http://localhost:5000/recognize_gesture",
           {
-            method: "GET",
+            method: "POST",
           }
         );
         const data = await response.json();
@@ -49,6 +54,9 @@ const VideoFeed = () => {
           <p>Detected Gesture: {gesture || "No gesture detected"}</p>
         )}
       </div>
+      <button
+        onClick={handleNavigate}
+        className="mt-4 p-2 border-none text-white rounded cursor-pointer">go back</button>
     </div>
   );
 };

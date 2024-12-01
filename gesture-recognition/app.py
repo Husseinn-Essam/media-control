@@ -2,6 +2,9 @@ from flask import Flask, Response, jsonify, request
 import cv2
 import threading
 from flask_cors import CORS
+from skimage.color import rgb2gray
+from skimage.filters import gaussian, threshold_otsu
+from skimage.measure import label, regionprops
 
 app = Flask(__name__)
 CORS(app)
@@ -43,19 +46,21 @@ def video_feed():
 
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/recognize_gesture', methods=['GET'])
+@app.route('/recognize_gesture', methods=['POST'])
 def recognize_gesture():
     """Process the current frame for gesture recognition."""
     with frame_lock:
         if current_frame is None:
             return jsonify({"error": "No frame available"}), 400
-        
-        gray_frame = cv2.cvtColor(current_frame, cv2.COLOR_BGR2GRAY)
-        blurred_frame = cv2.GaussianBlur(gray_frame, (5, 5), 0)
-        _, thresh_frame = cv2.threshold(blurred_frame, 50, 255, cv2.THRESH_BINARY)
+        print("hi")
+        gray_frame = rgb2gray(current_frame)
+        blurred_frame = gaussian(gray_frame, sigma=1)
+        thresh_value = threshold_otsu(blurred_frame)
+        thresh_frame = blurred_frame > thresh_value
 
-        contours, _ = cv2.findContours(thresh_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        num_contours = len(contours)
+        labeled_frame = label(thresh_frame)
+        regions = regionprops(labeled_frame)
+        num_contours = len(regions)
 
         gesture_detected = "Unknown"
         if num_contours > 0:
@@ -71,4 +76,5 @@ def index():
     return "API is running. Endpoints: /video_feed, /recognize_gesture"
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+   
+    app.run(host='0.0.0.0', port=5000) 

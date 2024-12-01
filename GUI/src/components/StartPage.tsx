@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 export const StartPage = () => {
   const navigate = useNavigate();
   const handleNavigate = () => {
-    navigate("/video-feed"); // Navigate to the "About" page
+    navigate("/video-feed"); 
   };
   return (
     <div>

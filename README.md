@@ -6,7 +6,7 @@
 
 ## Once npm and node are installed
 # Enter the project directory
-cd gesture-recognition/GUI
+cd GUI
 
 # Install dependencies
 npm install
@@ -16,6 +16,12 @@ npm run dev
 
 ## to start backend
 ## run the video-feed-api.py
+
+## for auto restart backend
+pip install watchdog
+cd gesture-recognition
+watchmedo auto-restart --patterns="*.py" --recursive -- python app.py
+
 ```
 ## notes
 - feed-extract.py was just for testing opencv
