@@ -8,36 +8,36 @@ const VideoFeed = () => {
   const handleNavigate = () => {
     navigate("/"); 
   };
-  useEffect(() => {
-    // Function to fetch gesture data
-    const fetchGesture = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          "http://localhost:5000/recognize_gesture",
-          {
-            method: "POST",
-          }
-        );
-        const data = await response.json();
-        setGesture(data.gesture);
-        console.log("Gesture:", data.gesture);
+  // useEffect(() => {
+  //   // Function to fetch gesture data
+  //   const fetchGesture = async () => {
+  //     try {
+  //       setLoading(true);
+  //       const response = await fetch(
+  //         "http://localhost:5000/recognize_gesture",
+  //         {
+  //           method: "POST",
+  //         }
+  //       );
+  //       const data = await response.json();
+  //       setGesture(data.gesture);
+  //       console.log("Gesture:", data.gesture);
         
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching gesture:", error);
-        setLoading(false);
-      }
-    };
+  //       setLoading(false);
+  //     } catch (error) {
+  //       console.error("Error fetching gesture:", error);
+  //       setLoading(false);
+  //     }
+  //   };
 
-    // Set up polling every second
-    const intervalId = setInterval(() => {
-      fetchGesture();
-    }, 1000);
+  //   // Set up polling every second
+  //   const intervalId = setInterval(() => {
+  //     fetchGesture();
+  //   }, 1000);
 
-    // Cleanup function to stop polling when component unmounts
-    return () => clearInterval(intervalId);
-  }, []);
+  //   // Cleanup function to stop polling when component unmounts
+  //   return () => clearInterval(intervalId);
+  // }, []);
   return (
     <div>
       <h1>Live Video Feed</h1>
