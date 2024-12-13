@@ -12,8 +12,11 @@ def segmenter(capturedFrame):
     # segment the hand
     hand_segment = segment_hand(thresh_frame, capturedFrame)
     if hand_segment is not None:
-        show_images([hand_segment], ['Hand Segment'])
-    return hand_segment
+        hand_segment = capturedFrame[hand_segment[1]:hand_segment[1] + hand_segment[3], hand_segment[0]:hand_segment[0] + hand_segment[2]]
+        hand = adaptive_thresholding(hand_segment)
+        return hand
+    else:
+        return thresh_frame
 
 def segment_hand(thresh_frame, original_frame):
     # Convert to 8-bit integer if needed
@@ -86,30 +89,40 @@ def segment_hand(thresh_frame, original_frame):
     print("Best Bounding Box: ", best_bounding_box)
     return best_bounding_box
 
+def adaptive_thresholding(image):
+    gray_frame = rgb2gray(image)
+    
+    blurred_frame = gaussian(gray_frame, sigma=2) # to remove noise
+    thresh = threshold_otsu(blurred_frame)
+    thresh_frame = blurred_frame < thresh
+    thresh_frame = thresh_frame.astype(np.uint8) * 255
+    thresh_frame = cv2.morphologyEx(thresh_frame, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)), iterations=2)
+    
+    return thresh_frame
 
 
 
-
-def preprocess_frame(capturedFrame):
-    capturedFrame = white_balance(capturedFrame)
-    capturedFrame = normalize_lighting_clahe(capturedFrame)
-    capturedFrame = cv2.cvtColor(capturedFrame, cv2.COLOR_BGR2HSV)
+def preprocess_frame(capturedFrame, mode='HSV'):
+    # capturedFrame = white_balance(capturedFrame)
+    # capturedFrame = normalize_lighting_clahe(capturedFrame)
     
     # Constants for finding range of skin color in YCrCb
-    # # min_YCrCb = np.array([0,133,77],np.uint8)
-    # # max_YCrCb = np.array([255,173,127],np.uint8)
-    # # imageYCrCb = cv2.cvtColor(capturedFrame,cv2.COLOR_BGR2YCR_CB)
-    # # skinRegion = cv2.inRange(imageYCrCb,min_YCrCb,max_YCrCb)  
-    # # skinMask = np.all(imageYCrCb >= min_YCrCb, axis=-1) & np.all(imageYCrCb <= max_YCrCb, axis=-1)
-    # # skinMask = skinMask.astype("uint8") * 255  # Convert to 0 and 255
-    
-    # preprocess the frame
-    # define the upper and lower boundaries of the HSV pixel intensities to be considered 'skin'
-    lower = np.array([0, 50, 50], dtype="uint8")
-    upper = np.array([20, 255, 255], dtype="uint8")
-    skinMask = np.all(capturedFrame >= lower, axis=-1) & np.all(capturedFrame <= upper, axis=-1)
-    skinMask = skinMask.astype("uint8") * 255  # Convert to 0 and 255
-    
+    if mode == 'Ycrcb':        
+        min_YCrCb = np.array([0, 133, 77], np.uint8)
+        max_YCrCb = np.array([255, 173, 127], np.uint8)
+        imageYCrCb = cv2.cvtColor(capturedFrame,cv2.COLOR_BGR2YCR_CB)
+        skinMask = np.all(imageYCrCb >= min_YCrCb, axis=-1) & np.all(imageYCrCb <= max_YCrCb, axis=-1)
+        skinMask = skinMask.astype("uint8") * 255  # Convert to 0 and 255
+        # imageYCrCb = cv2.cvtColor(capturedFrame, cv2.COLOR_YCrCb2BGR)
+    else:   
+        # define the upper and lower boundaries of the HSV pixel intensities to be considered 'skin'
+        imageHSV = cv2.cvtColor(capturedFrame, cv2.COLOR_BGR2HSV)
+        lower = np.array([0, 50, 40], dtype="uint8")
+        upper = np.array([20, 255, 255], dtype="uint8")
+        skinMask = np.all(imageHSV >= lower, axis=-1) & np.all(imageHSV <= upper, axis=-1)
+        skinMask = skinMask.astype("uint8") * 255  # Convert to 0 and 255
+        # imageHSV = cv2.cvtColor(capturedFrame, cv2.COLOR_HSV2BGR)
+        
     
     # skinMask = cv2.GaussianBlur(skinMask, (3, 3), 0)
     
@@ -121,7 +134,6 @@ def preprocess_frame(capturedFrame):
 
     # blur the mask to help remove noise
     skinMask = cv2.GaussianBlur(skinMask, (5, 5), 0)
-    capturedFrame = cv2.cvtColor(capturedFrame, cv2.COLOR_HSV2BGR)
     # capturedFrame = cv2.bitwise_and(capturedFrame, capturedFrame, mask=skinMask)
     return capturedFrame, skinMask
 
