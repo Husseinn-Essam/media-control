@@ -24,7 +24,8 @@ def capture_frames():
         success, frame = cap.read()
         if success:
             with frame_lock:
-                current_frame = frame
+                #flip the frame so that it is not mirrored
+                current_frame = cv2.flip(frame, 1)
 
 # Start the frame capture in a separate thread
 capture_thread = threading.Thread(target=capture_frames, daemon=True)

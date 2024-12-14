@@ -8,8 +8,14 @@
 # Enter the project directory
 cd GUI
 
+Open PowerShell as an administrator.
+Run the following command to change the execution policy:
+
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+
 # Install dependencies
 npm install
+
 
 # Develop
 npm run dev
@@ -19,6 +25,9 @@ npm run dev
 
 ## for auto restart backend
 pip install watchdog
+pip install flask
+pip install flask-cors
+
 cd gesture-recognition
 watchmedo auto-restart --patterns="*.py" --recursive -- python app.py
 

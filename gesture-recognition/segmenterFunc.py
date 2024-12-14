@@ -8,15 +8,15 @@ from commonfunctions import *
 
 def segmenter(capturedFrame):
     # preprocess the frame
-    thresh_frame = preprocess_frame(capturedFrame)
+    capturedFrame, thresh_frame = preprocess_frame(capturedFrame)
     # segment the hand
     hand_segment = segment_hand(thresh_frame, capturedFrame)
-    if hand_segment is not None:
-        hand_segment = capturedFrame[hand_segment[1]:hand_segment[1] + hand_segment[3], hand_segment[0]:hand_segment[0] + hand_segment[2]]
-        hand = adaptive_thresholding(hand_segment)
-        return hand
+    if hand_segment is not None and len(hand_segment) == 4:
+        roi = capturedFrame[hand_segment[1]:hand_segment[1] + hand_segment[3], hand_segment[0]:hand_segment[0] + hand_segment[2]]
+        hand = skin_thresholding(roi)
+        return hand, roi
     else:
-        return thresh_frame
+        return thresh_frame, capturedFrame
 
 def segment_hand(thresh_frame, original_frame):
     # Convert to 8-bit integer if needed
@@ -26,7 +26,7 @@ def segment_hand(thresh_frame, original_frame):
     contours, _ = cv2.findContours(thresh_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     if not contours:
-        return None, None, None  # No hand detected
+        return None  # No hand detected
 
     # Step 2: Filter contours by size and shape
     filtered_contours = []
@@ -41,7 +41,7 @@ def segment_hand(thresh_frame, original_frame):
         x, y, w, h = cv2.boundingRect(contour)
         aspect_ratio = w / h
         # Draw the bounding rectangle on the image
-        cv2.rectangle(original_frame, (x, y), (x + w, y + h), (255, 0, 0), 5)
+        # cv2.rectangle(original_frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
         if 0.3 < aspect_ratio < 3.0:  # Acceptable aspect ratio range for a hand
             filtered_contours.append(contour)
 
@@ -70,13 +70,13 @@ def segment_hand(thresh_frame, original_frame):
                        0.3 * aspect_ratio_score +
                        0.1 * proximity_score)
         
-        bounding_boxes.append((final_score, (x, y, w, h)))
+        bounding_boxes.append((final_score, (x, y, w, h), contour))
 
     # Step 4: Select the best bounding box
-    best_bounding_box = max(bounding_boxes, key=lambda b: b[0])[1]
+    _,best_bounding_box, bestcontour = max(bounding_boxes, key=lambda b: b[0])
 
     # Draw the best bounding box
-    cv2.rectangle(original_frame, (x, y), (x + w, y + h), (0, 255, 0), 10)
+    cv2.rectangle(original_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
     # Increase the bounding box size by 25%
     increase_ratio = 0.25
     x, y, w, h = best_bounding_box
@@ -85,26 +85,41 @@ def segment_hand(thresh_frame, original_frame):
     w = min(original_frame.shape[1] - x, w + int(increase_ratio * w))
     h = min(original_frame.shape[0] - y, h + int(increase_ratio * h))
     best_bounding_box = (x, y, w, h)
-
-    print("Best Bounding Box: ", best_bounding_box)
+    # print("Best Bounding Box: ", best_bounding_box)
     return best_bounding_box
 
 def adaptive_thresholding(image):
     gray_frame = rgb2gray(image)
     
-    blurred_frame = gaussian(gray_frame, sigma=2) # to remove noise
-    thresh = threshold_otsu(blurred_frame)
-    thresh_frame = blurred_frame < thresh
+    thresh = threshold_otsu(gray_frame)
+    thresh_frame = gray_frame < thresh
     thresh_frame = thresh_frame.astype(np.uint8) * 255
-    thresh_frame = cv2.morphologyEx(thresh_frame, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)), iterations=2)
+    thresh_frame = cv2.morphologyEx(thresh_frame, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)), iterations=3)
     
     return thresh_frame
 
+def skin_thresholding(image):
+    # Constants for finding range of skin
+    min_YCrCb = np.array([0, 133, 77], np.uint8)
+    max_YCrCb = np.array([255, 173, 127], np.uint8)
+    imageYCrCb = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
+    skinMask = cv2.inRange(imageYCrCb, min_YCrCb, max_YCrCb)
+    skinMask = cv2.GaussianBlur(skinMask, (5, 5), 0)
+    skinMask = cv2.medianBlur(skinMask, 5)
+    
+    skinMask = cv2.morphologyEx(skinMask, cv2.MORPH_ERODE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)), iterations=2)
+    skinMask = cv2.morphologyEx(skinMask, cv2.MORPH_DILATE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)), iterations=2)
+    skinMask = cv2.morphologyEx(skinMask, cv2.MORPH_ERODE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)), iterations=2)
 
+    skinMask = cv2.morphologyEx(skinMask, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)), iterations=6)
+    
+    return skinMask
 
 def preprocess_frame(capturedFrame, mode='HSV'):
     # capturedFrame = white_balance(capturedFrame)
-    # capturedFrame = normalize_lighting_clahe(capturedFrame)
+    capturedFrame = cv2.GaussianBlur(capturedFrame, (3, 3), 0)
+    capturedFrame = normalize_lighting_clahe(capturedFrame)
+    capturedFrame = cv2.medianBlur(capturedFrame, 5)
     
     # Constants for finding range of skin color in YCrCb
     if mode == 'Ycrcb':        
@@ -124,13 +139,12 @@ def preprocess_frame(capturedFrame, mode='HSV'):
         # imageHSV = cv2.cvtColor(capturedFrame, cv2.COLOR_HSV2BGR)
         
     
-    # skinMask = cv2.GaussianBlur(skinMask, (3, 3), 0)
     
     # apply a series of erosions and dilations to the mask
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
     # skinMask = cv2.dilate(skinMask, kernel, iterations=5)
     # skinMask = cv2.erode(skinMask, kernel, iterations=2)
-    skinMask = cv2.morphologyEx(skinMask, cv2.MORPH_CLOSE, kernel, iterations=2)
+    skinMask = cv2.morphologyEx(skinMask, cv2.MORPH_CLOSE, kernel, iterations=4)
 
     # blur the mask to help remove noise
     skinMask = cv2.GaussianBlur(skinMask, (5, 5), 0)

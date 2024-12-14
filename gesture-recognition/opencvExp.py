@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
 import math
+from segmenterFunc import segmenter
 
-# Initialize webcam
+# Initialize webcam 
 cap = cv2.VideoCapture(0)
 
 # Dimensions for the region of interest (ROI)
@@ -21,16 +22,22 @@ def imageFiltering(frame):
     return roi, thresh, contours
 
 while True:
+    # Capture the frame twice a second
+    cv2.waitKey(50)
     ret, frame = cap.read()
     if not ret:
         print("Failed to grab frame. Exiting...")
         break
+    frame = cv2.flip(frame, 1)
     
     # Draw the ROI rectangle
-    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    # cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
     
     # Apply image filtering and gesture recognition
-    roi, thresh, contours = imageFiltering(frame)
+    # roi, thresh, contours = imageFiltering(frame)
+    frame = cv2.GaussianBlur(frame, (5, 5), 0)
+    thresh, roi = segmenter(frame)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     drawing = np.zeros(roi.shape, np.uint8)
 
     try:
@@ -77,9 +84,9 @@ while True:
         pass
     
     # Show the processed frames
-    cv2.imshow("ROI", roi)
-    cv2.imshow("Threshold", thresh)
-    cv2.imshow("Drawing", drawing)
+    cv2.imshow("ROI", cv2.resize(roi, (300, 400)))
+    cv2.imshow("Threshold", cv2.resize(thresh, (300, 400)))
+    cv2.imshow("Drawing", cv2.resize(drawing, (300, 400)))
     cv2.imshow("Frame", frame)
     
     # Exit on pressing 'q'
