@@ -9,7 +9,7 @@ export const StartPage = () => {
     <div>
       <div className="flex justify-center items-center mx-auto">
         <div className="relative flex flex-col items-center">
-          <div className="text-6xl animate-bounce">🖕</div>
+          <div className="text-6xl animate-bounce">👋</div>
           <div className="absolute top-0 -translate-y-20">
             <div className="relative flex space-x-4">
               <div className="text-2xl text-blue-500 animate-note1">🎶</div>
