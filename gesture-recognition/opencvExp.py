@@ -82,7 +82,16 @@ while True:
             cv2.circle(drawing, far, 5, (0, 255, 255), -1)
 
         if count_defects == 0:
-            gesture = "ONE"
+            # Calculate the bounding rectangle area to detect fist vs open hand
+            x, y, w, h = cv2.boundingRect(contour)
+            rect_area = w * h
+            contour_area = cv2.contourArea(contour)
+            solidity = contour_area / rect_area if rect_area != 0 else 0
+
+            if solidity > 0.6:  # Fist: High solidity (compact shape)
+                gesture = "FIST"
+            else:  # Open hand with one finger extended
+                gesture = "ONE"
         elif count_defects == 1:
             gesture = "TWO"
         elif count_defects == 2:
@@ -96,6 +105,8 @@ while True:
 
         cv2.putText(frame, f"Gesture: {gesture}", (10, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        
+        ## Pointing Direction Stage
         moments = cv2.moments(contour)
         if moments['m00'] != 0:
             cx = int(moments['m10'] / moments['m00'])
@@ -141,7 +152,8 @@ while True:
             cv2.putText(frame, f"Direction: {direction}", (10, 100),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-    except:
+    except Exception as e:
+        # print(f"Error in processing frame: {e}")
         pass
 
     # Show the processed frames
