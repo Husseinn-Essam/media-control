@@ -7,26 +7,6 @@ from customAlgos import convexity_defects, angle_between_points
 # Initialize webcam 
 cap = cv2.VideoCapture(0)
 
-# Dimensions for the region of interest (ROI)
-x, y, w, h = 100, 100, 200, 200
-
-
-
-
-
-
-def imageFiltering(frame):
-    """Apply image filtering and return contours."""
-    roi = frame[y:y+h, x:x+w]
-    blur = cv2.GaussianBlur(roi, (5, 5), 0)
-    hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv, np.array([2, 50, 50]), np.array([20, 255, 255]))
-    filtered = cv2.GaussianBlur(mask, (3, 3), 0)
-    ret, thresh = cv2.threshold(filtered, 127, 255, 0)
-    thresh = cv2.GaussianBlur(thresh, (5, 5), 0)
-    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    return roi, thresh, contours
-
 while True:
     # Capture the frame twice a second
     cv2.waitKey(50)
@@ -79,22 +59,6 @@ while True:
             cv2.line(drawing, start, end, (255, 0, 0), 1)  # Blue line for defect
             cv2.circle(drawing, far, 5, (0, 255, 255), -1)  # Yellow circle for defect point
 
-       
-       ## count defects regardless of angle
-        # if defects is not None:
-        #     for i in range(defects.shape[0]):
-        #         s, e, f, d = defects[i, 0]
-        #         # Here, instead of calculating angles, we simply count the defects
-        #         count_defects += 1
-        #         start = tuple(contour[s][0])
-        #         end = tuple(contour[e][0])
-        #         far = tuple(contour[f][0])
-        #         # Draw the defect points (fingers)
-        #         cv2.circle(drawing, far, 5, [0, 0, 255], -1)
-        #         cv2.circle(drawing, start, 5, (0, 0, 255), -1)  # Red circle for start
-        #         cv2.circle(drawing, end, 5, (0, 0, 255), -1)    # Red circle for end
-        #         cv2.circle(drawing, far, 5, (255, 0, 0), -1)    # Blue circle for farthest point
-        #         cv2.line(drawing, start, end, [0, 255, 0], 2)
         # Determine gesture based on defect count
         
         if count_defects == 0:
