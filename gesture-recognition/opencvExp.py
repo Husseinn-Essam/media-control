@@ -3,9 +3,12 @@ import numpy as np
 import math
 from segmenterFunc import segmenter
 from customAlgos import convexity_defects, angle_between_points
+# debug related stuff
+current_camera = 0 # default webcam
+pause = False
+quit = False
 
 # Initialize webcam
-current_camera = 0 # default webcam
 cap = cv2.VideoCapture(current_camera)
 
 def toggle_camera():
@@ -23,9 +26,39 @@ def toggle_camera():
     # Reinitialize the capture with the new camera
     cap = cv2.VideoCapture(current_camera)
 
+def toggle_pause():
+    global pause
+    if pause:
+        pause = False
+        print('System resumed')
+    else:
+        pause = True
+        print('System paused')
+
+def handle_key():
+    # Exit on pressing 'q'
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        global quit
+        quit = True
+    # Switch camera if 's' pressed
+    elif cv2.waitKey(1) & 0xFF == ord('s'):
+        toggle_camera()
+    elif cv2.waitKey(1) & 0xFF == ord('p'):
+        toggle_pause()
+
+
 while True:
     # Capture the frame twice a second
     cv2.waitKey(50)
+
+    handle_key()
+    
+    if quit:
+        print("Quitting...")
+        break
+    if pause:
+        continue
+
     ret, frame = cap.read()
     if not ret:
         print("Failed to grab frame. Exiting...")
@@ -100,13 +133,7 @@ while True:
     cv2.imshow("Drawing", cv2.resize(drawing, (300, 400)))
     cv2.imshow("Frame", frame)
     
-    # Exit on pressing 'q'
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-    # Switch camera if 's' pressed
-    if cv2.waitKey(1) & 0xFF == ord('s'):
-        toggle_camera()
+    
 
 cap.release()
 cv2.destroyAllWindows()
