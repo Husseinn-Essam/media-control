@@ -6,22 +6,56 @@ from skimage.measure import label, regionprops
 import numpy as np
 from commonfunctions import *
 
-def segmenter(capturedFrame):
-    roi_x_range = [-1,-1]
-    roi_y_range = [-1,-1]
 
+def isolate_hand(capturedFrame):
+    """
+    Isolates the hand in the input frame, making the rest of the frame black.
+    
+    Args:
+        capturedFrame (numpy.ndarray): Input frame.
+    
+    Returns:
+        numpy.ndarray: Output frame with only the hand visible, the rest black.
+    """
+    # Preprocess the frame and segment the hand
+    preprocessed_frame, thresh_frame = preprocess_frame(capturedFrame)
+    hand_segment = segment_hand(thresh_frame, preprocessed_frame)
+    # Check if a hand segment was found
+    if hand_segment is not None and len(hand_segment) == 4:
+        # Extract the bounding box of the hand
+        x, y, w, h = hand_segment
+        # Create a black frame with the same dimensions as the input
+        black_frame = np.zeros_like(capturedFrame)
+        # Extract the region of interest (ROI) where the hand is located
+        roi = capturedFrame[y:y + h, x:x + w]
+        # Threshold the ROI to isolate the hand
+        hand_mask = skin_thresholding(roi)
+        # Place the isolated hand on the black frame
+        
+        black_frame[y:y + h, x:x + w] = cv2.bitwise_and(roi, roi, mask=hand_mask)
+        show_images([hand_mask,roi,black_frame])
+        return black_frame
+
+    else:
+        # If no hand is detected, return a completely black frame
+        return np.zeros_like(capturedFrame)
+
+
+
+
+def segmenter(capturedFrame):
     # preprocess the frame
     capturedFrame, thresh_frame = preprocess_frame(capturedFrame)
     # segment the hand
     hand_segment = segment_hand(thresh_frame, capturedFrame)
     if hand_segment is not None and len(hand_segment) == 4:
         roi = capturedFrame[hand_segment[1]:hand_segment[1] + hand_segment[3], hand_segment[0]:hand_segment[0] + hand_segment[2]]
+        isolated_hand = isolate_hand(capturedFrame)
         hand = skin_thresholding(roi)
-        roi_y_range = [hand_segment[1],hand_segment[1]+hand_segment[3]]
-        roi_x_range = [hand_segment[0],hand_segment[0]+hand_segment[2]]
-        return hand, roi, roi_y_range, roi_x_range
+        isolated_hand_mask = skin_thresholding(isolated_hand)    
+        return hand, roi, capturedFrame, isolated_hand_mask
     else:
-        return thresh_frame, capturedFrame, roi_y_range, roi_x_range
+        return thresh_frame, capturedFrame
 
 def segment_hand(thresh_frame, original_frame):
     # Convert to 8-bit integer if needed
