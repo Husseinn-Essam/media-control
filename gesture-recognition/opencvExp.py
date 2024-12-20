@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import math
 from segmenterFunc import segmenter
-from customAlgos import convexity_defects, angle_between_points, get_palm_center
+from customAlgos import convexity_defects, angle_between_points, get_palm_center, is_rock_on, detect_pointing_direction, calcSolidity
 from motionFunc import motion_add_point_to_buffer, motion_handle_buffer_reset, motion_track_points
 
 # debug related stuff
@@ -115,11 +115,23 @@ while True:
             far = tuple(contour[far_idx][0])
             cv2.line(drawing, start, end, (255, 0, 0), 1)  # Blue line for defect
             cv2.circle(drawing, far, 5, (0, 255, 255), -1)  # Yellow circle for defect point
-
-        # Determine gesture based on defect count
         
-        if count_defects == 0:
-            gesture = "ONE"
+        palm_center = get_palm_center(contour)
+        cv2.circle(drawing, palmCenter, 5, (0, 0, 255), -1)
+        direction = detect_pointing_direction(frame, contour)       
+        solidity = calcSolidity(contour)
+        
+        if is_rock_on(contour,drawing,palm_center[0],palm_center[1], count_defects)==True and direction!="Left" and direction!="Right" and solidity<=0.6:
+            gesture = "ROCK ON"
+        elif count_defects == 0:
+            if solidity > 0.6:  # Fist: High solidity (compact shape)
+                gesture = "FIST"
+            else:  # Open hand with one finger extended
+                gesture = "ONE"
+            # check direction
+            direction = detect_pointing_direction(frame, contour)
+            cv2.putText(frame, f"Direction: {direction}", (10, 100),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         elif count_defects == 1:
             gesture = "TWO"
         elif count_defects == 2:
