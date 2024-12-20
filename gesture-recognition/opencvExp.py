@@ -3,6 +3,8 @@ import numpy as np
 import math
 from segmenterFunc import segmenter
 from customAlgos import convexity_defects, angle_between_points
+from motionFunc import motion_add_roi_to_buffer, motion_handle_roi_buffer_reset, motion_track_roi
+
 # debug related stuff
 current_camera = 0 # default webcam
 pause = False
@@ -71,9 +73,10 @@ while True:
     # Apply image filtering and gesture recognition
     # roi, thresh, contours = imageFiltering(frame)
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
-    thresh, roi = segmenter(frame)
+    thresh, roi, roi_y_range, roi_x_range = segmenter(frame)
     contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     drawing = np.zeros(roi.shape, np.uint8)
+    motion_add_roi_to_buffer((roi_y_range, roi_x_range))
 
     try:
         contour = max(contours, key=lambda c: cv2.contourArea(c), default=0)
@@ -122,6 +125,8 @@ while True:
             gesture = "FIVE"
         else:
             gesture = "UNKNOWN"
+        
+        motion_track_roi()
 
         cv2.putText(frame, f"Gesture: {gesture}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
     except:
@@ -133,7 +138,8 @@ while True:
     cv2.imshow("Drawing", cv2.resize(drawing, (300, 400)))
     cv2.imshow("Frame", frame)
     
-    
+    # motion_handle_roi_buffer_reset()
+
 
 cap.release()
 cv2.destroyAllWindows()
