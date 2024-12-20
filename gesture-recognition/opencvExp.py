@@ -83,7 +83,7 @@ while True:
         contour = max(contours, key=lambda c: cv2.contourArea(c), default=0)
         palmCenter = get_palm_center(contour)
         cv2.circle(drawing, palmCenter, 5, (0, 0, 255), -1)
-        print(palmCenter)
+        #print(palmCenter)
         motion_add_point_to_buffer((palmCenter[0], palmCenter[1]))
         hull = cv2.convexHull(contour)
         cv2.drawContours(drawing, [contour], -1, (0, 255, 0), 1)

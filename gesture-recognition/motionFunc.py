@@ -4,19 +4,24 @@ import time
 point_buffer = []
 
 # Time tracking variables for resetting the buffer
-last_check_time = time.time()
-interval_duration = 2  # Seconds
+last_motion_time = time.time()
+cooldown_duration = 0.5  # Minimum seconds between motion detections
 
 # Buffer settings
 BUFFER_LIMIT = 40  # Maximum number of points in the buffer before reset
-X_THRESHOLD = 30  # Minimum movement in the X direction to be considered as motion
-Y_THRESHOLD = 30 # Minimum movement in the Y direction to be considered as motion
+X_THRESHOLD = 40  # Minimum movement in the X direction to be considered as motion
+Y_THRESHOLD = 40  # Minimum movement in the Y direction to be considered as motion
+
+# Make it easy to understand where the prints are coming from
+def motion_print(string = "empty"):
+    print(f"motionFunc: {string}")
 
 def motion_handle_buffer_reset():
-    """Reset the point buffer after motion is detected and direction is determined."""
+    """Partially reset the point buffer after motion is detected."""
     global point_buffer
-    print("Motion detected. Resetting point buffer.")
-    point_buffer.clear()  # Reset the buffer after determining direction
+    motion_print("Motion detected. Resetting point buffer.")
+    if len(point_buffer) > 5:  # Keep the last 5 points for continuity
+        point_buffer = point_buffer[-5:]
 
 def motion_add_point_to_buffer(point):
     """Add new point data to the buffer."""
@@ -41,18 +46,23 @@ def motion_detected():
     if len(point_buffer) < 2:
         return False
 
-    # Iterate over all consecutive points in the buffer
+    # Check the average movement over the last few points
+    total_move_x, total_move_y = 0, 0
     for i in range(1, len(point_buffer)):
         current_point = point_buffer[i]
         previous_point = point_buffer[i - 1]
 
-        # Check if the movement in X or Y exceeds the threshold
-        move_x = abs(current_point[0] - previous_point[0])
-        move_y = abs(current_point[1] - previous_point[1])
+        # Accumulate movement values
+        total_move_x += abs(current_point[0] - previous_point[0])
+        total_move_y += abs(current_point[1] - previous_point[1])
 
-        # If either X or Y movement exceeds the threshold, motion is detected
-        if move_x > X_THRESHOLD or move_y > Y_THRESHOLD:
-            return True  # Motion detected
+    # Calculate the average movement
+    avg_move_x = total_move_x / (len(point_buffer) - 1)
+    avg_move_y = total_move_y / (len(point_buffer) - 1)
+
+    # Check if the average movement exceeds the threshold
+    if avg_move_x > X_THRESHOLD or avg_move_y > Y_THRESHOLD:
+        return True  # Motion detected
 
     return False  # No significant motion
 
@@ -77,14 +87,20 @@ def detect_motion_direction(prev_point, curr_point):
 
 def motion_track_points():
     """Track the motion of points and detect motion direction based on the buffer."""
-    global point_buffer
+    global point_buffer, last_motion_time
+
+    current_time = time.time()
 
     if len(point_buffer) > 1:
-        # print(f"Tracking {len(point_buffer)} points")
+        # Check if cooldown period has passed
+        if current_time - last_motion_time < cooldown_duration:
+            #motion_print("Skipping detection due to cooldown.")
+            return None  # Skip detection during cooldown
 
         # First, check if motion is detected using the threshold
         if motion_detected():
             # Motion detected, now determine the direction
+            #motion_print("Motion detected. Determining direction...")
             for i in range(1, len(point_buffer)):
                 current_point = point_buffer[i]
                 previous_point = point_buffer[i - 1]
@@ -92,7 +108,9 @@ def motion_track_points():
                 # Detect the motion direction
                 motion_direction = detect_motion_direction(previous_point, current_point)
                 if motion_direction != "NO MOTION":
-                    print(f"Motion detected: {motion_direction}")
-                    motion_handle_buffer_reset()  # Reset the buffer after direction is determined
+                    motion_print(f"Motion detected: {motion_direction}")
+                    motion_handle_buffer_reset()  # Partially reset the buffer after direction is determined
+                    last_motion_time = current_time  # Update the last motion time
                     return motion_direction
-                    break  # Stop further checks after detecting motion and direction
+
+    return None  # No motion detected
