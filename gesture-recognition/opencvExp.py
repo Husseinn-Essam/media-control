@@ -4,8 +4,24 @@ import math
 from segmenterFunc import segmenter
 from customAlgos import convexity_defects, angle_between_points
 
-# Initialize webcam 
-cap = cv2.VideoCapture(0)
+# Initialize webcam
+current_camera = 0 # default webcam
+cap = cv2.VideoCapture(current_camera)
+
+def toggle_camera():
+    # Using the global variables
+    global cap, current_camera
+    # Release the current camera
+    cap.release()
+    
+    # Switch between cameras
+    if current_camera == 0:
+        current_camera = 1
+    else:
+        current_camera = 0
+
+    # Reinitialize the capture with the new camera
+    cap = cv2.VideoCapture(current_camera)
 
 while True:
     # Capture the frame twice a second
@@ -87,6 +103,10 @@ while True:
     # Exit on pressing 'q'
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+
+    # Switch camera if 's' pressed
+    if cv2.waitKey(1) & 0xFF == ord('s'):
+        toggle_camera()
 
 cap.release()
 cv2.destroyAllWindows()
