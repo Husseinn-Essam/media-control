@@ -79,3 +79,11 @@ def angle_between_points(pt1, pt2, pt0):
     return abs(angle * 180.0 / math.pi)
 
 
+def get_palm_center(contour):
+    moments = cv2.moments(contour)
+    if moments['m00'] != 0:
+        cx = int(moments['m10'] / moments['m00'])  
+        cy = int(moments['m01'] / moments['m00'])  
+        return (cx, cy)
+    else:
+        return None

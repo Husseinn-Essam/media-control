@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 import math
 from segmenterFunc import segmenter
-from customAlgos import convexity_defects, angle_between_points
-from motionFunc import motion_add_roi_to_buffer, motion_handle_roi_buffer_reset, motion_track_roi
+from customAlgos import convexity_defects, angle_between_points, get_palm_center
+from motionFunc import motion_add_point_to_buffer, motion_handle_buffer_reset, motion_track_points
 
 # debug related stuff
 current_camera = 0 # default webcam
@@ -76,10 +76,15 @@ while True:
     thresh, roi, roi_y_range, roi_x_range = segmenter(frame)
     contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     drawing = np.zeros(roi.shape, np.uint8)
-    motion_add_roi_to_buffer((roi_y_range, roi_x_range))
+   
 
     try:
+
         contour = max(contours, key=lambda c: cv2.contourArea(c), default=0)
+        palmCenter = get_palm_center(contour)
+        cv2.circle(drawing, palmCenter, 5, (0, 0, 255), -1)
+        print(palmCenter)
+        motion_add_point_to_buffer((palmCenter[0], palmCenter[1]))
         hull = cv2.convexHull(contour)
         cv2.drawContours(drawing, [contour], -1, (0, 255, 0), 1)
         cv2.drawContours(drawing, [hull], -1, (0, 0, 255), 1)
@@ -126,7 +131,7 @@ while True:
         else:
             gesture = "UNKNOWN"
         
-        motion_detected = motion_track_roi()
+        motion_detected = motion_track_points()
         if motion_detected != None:
             motion_last_detected = motion_detected
 
