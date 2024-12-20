@@ -7,6 +7,9 @@ import numpy as np
 from commonfunctions import *
 
 def segmenter(capturedFrame):
+    roi_x_range = [-1,-1]
+    roi_y_range = [-1,-1]
+
     # preprocess the frame
     capturedFrame, thresh_frame = preprocess_frame(capturedFrame)
     # segment the hand
@@ -14,9 +17,11 @@ def segmenter(capturedFrame):
     if hand_segment is not None and len(hand_segment) == 4:
         roi = capturedFrame[hand_segment[1]:hand_segment[1] + hand_segment[3], hand_segment[0]:hand_segment[0] + hand_segment[2]]
         hand = skin_thresholding(roi)
-        return hand, roi
+        roi_y_range = [hand_segment[1],hand_segment[1]+hand_segment[3]]
+        roi_x_range = [hand_segment[0],hand_segment[0]+hand_segment[2]]
+        return hand, roi, roi_y_range, roi_x_range
     else:
-        return thresh_frame, capturedFrame
+        return thresh_frame, capturedFrame, roi_y_range, roi_x_range
 
 def segment_hand(thresh_frame, original_frame):
     # Convert to 8-bit integer if needed
