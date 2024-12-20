@@ -33,7 +33,6 @@ def isolate_hand(capturedFrame):
         # Place the isolated hand on the black frame
         
         black_frame[y:y + h, x:x + w] = cv2.bitwise_and(roi, roi, mask=hand_mask)
-        show_images([hand_mask,roi,black_frame])
         return black_frame
 
     else:
