@@ -95,4 +95,5 @@ def motion_track_roi():
                 if motion_direction != "NO MOTION":
                     print(f"Motion detected: {motion_direction}")
                     motion_handle_roi_buffer_reset()  # Reset the buffer after direction is determined
+                    return motion_direction
                     break  # Stop further checks after detecting motion and direction

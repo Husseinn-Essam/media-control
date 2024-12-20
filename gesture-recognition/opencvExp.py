@@ -126,9 +126,14 @@ while True:
         else:
             gesture = "UNKNOWN"
         
-        motion_track_roi()
+        motion_detected = motion_track_roi()
+        if motion_detected != None:
+            motion_last_detected = motion_detected
 
         cv2.putText(frame, f"Gesture: {gesture}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        cv2.putText(frame, f"Detected Motion: {motion_detected}", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
+        cv2.putText(frame, f"Last Detected Motion: {motion_last_detected}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+
     except:
         pass
     
