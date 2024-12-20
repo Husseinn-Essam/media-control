@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import math
 from segmenterFunc import segmenter
-from customAlgos import convexity_defects, angle_between_points
+from customAlgos import convexity_defects, angle_between_points ,detect_pointing_direction, is_rock_on, get_palm_center,calcSolidity
 
 # Initialize webcam
 cap = cv2.VideoCapture(0)
@@ -41,7 +41,12 @@ while True:
     roi, thresh, contours = imageFiltering(frame)
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
     # roi,thresh,contours = imageFiltering(frame)
-    thresh, roi = segmenter(frame)
+    result = segmenter(frame)
+    if len(result) == 3:
+        thresh, roi, handSegment = result
+    else:
+        thresh, roi = result
+        handSegment = None
     contours, _ = cv2.findContours(
         thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     drawing = np.zeros(roi.shape, np.uint8)
@@ -51,7 +56,10 @@ while True:
         hull = cv2.convexHull(contour)
         cv2.drawContours(drawing, [contour], -1, (0, 255, 0), 1)
         cv2.drawContours(drawing, [hull], -1, (0, 0, 255), 1)
-
+        palm_center = get_palm_center(contour)
+        ## calculate the solidity of the hand and direction of the hand
+        direction = detect_pointing_direction(frame, contour)
+        solidity = calcSolidity(contour)
         hull_indices = cv2.convexHull(contour, returnPoints=False).flatten()
 
         defects = convexity_defects(contour[:, 0, :], hull_indices)
@@ -80,18 +88,19 @@ while True:
             cv2.line(drawing, start, end, (255, 0, 0), 1)
             # Yellow circle for defect point
             cv2.circle(drawing, far, 5, (0, 255, 255), -1)
-
-        if count_defects == 0:
-            # Calculate the bounding rectangle area to detect fist vs open hand
-            x, y, w, h = cv2.boundingRect(contour)
-            rect_area = w * h
-            contour_area = cv2.contourArea(contour)
-            solidity = contour_area / rect_area if rect_area != 0 else 0
-
+     
+        
+        if is_rock_on(contour,drawing,palm_center[0],palm_center[1], count_defects)==True and direction!="Left" and direction!="Right" and solidity<=0.6:
+            gesture = "ROCK ON"
+        elif count_defects == 0:
             if solidity > 0.6:  # Fist: High solidity (compact shape)
                 gesture = "FIST"
             else:  # Open hand with one finger extended
                 gesture = "ONE"
+            # check direction
+            direction = detect_pointing_direction(frame, contour)
+            cv2.putText(frame, f"Direction: {direction}", (10, 100),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         elif count_defects == 1:
             gesture = "TWO"
         elif count_defects == 2:
@@ -106,51 +115,7 @@ while True:
         cv2.putText(frame, f"Gesture: {gesture}", (10, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         
-        ## Pointing Direction Stage
-        moments = cv2.moments(contour)
-        if moments['m00'] != 0:
-            cx = int(moments['m10'] / moments['m00'])
-            cy = int(moments['m01'] / moments['m00'])
-            palm_center = (cx, cy)
-
-            # Draw the palm center
-            cv2.circle(frame, palm_center, 5, (255, 0, 0), -1)
-
-            # Detect the fingertip (point farthest from the palm center)
-            fingertip = None
-            max_distance = 0
-        for point in contour:
-            point = tuple(point[0])  # Get (x, y) coordinates
-            distance = np.linalg.norm(
-                np.array(point) - np.array(palm_center))  # Compute distance
-            if distance > max_distance:
-                max_distance = distance
-                fingertip = point
-        if fingertip:
-            cv2.circle(frame, fingertip, 10, (0, 255, 0), -1)
-            cv2.line(frame, palm_center, fingertip, (255, 0, 0), 2)
-
-            # Compute pointing direction
-            pointing_vector = np.array(
-                [fingertip[0] - palm_center[0], fingertip[1] - palm_center[1]])
-            pointing_vector = pointing_vector / np.linalg.norm(pointing_vector)
-
-            # Determine direction
-            direction = ""
-            if abs(pointing_vector[0]) > abs(pointing_vector[1]):
-                if pointing_vector[0] > 0:
-                    direction = "Right"
-                else:
-                    direction = "Left"
-            else:
-                if pointing_vector[1] > 0:
-                    direction = "Down"
-                else:
-                    direction = "Up"
-
-            # Put direction text on the image
-            cv2.putText(frame, f"Direction: {direction}", (10, 100),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        
 
     except Exception as e:
         # print(f"Error in processing frame: {e}")
