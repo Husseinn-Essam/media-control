@@ -16,9 +16,12 @@ const Settings = () => {
       if (loading) return;
       try {
         const response = await fetch(
-          "http://localhost:5000/settings",
+          "http://localhost:5000/update-settings",
           {
             method: "POST",
+            headers: {
+              "Content-Type": "application/json", // Set the Content-Type header
+            },
             body: JSON.stringify({
               camera: selectedCamera,
               color_mode: selectedColorMode,

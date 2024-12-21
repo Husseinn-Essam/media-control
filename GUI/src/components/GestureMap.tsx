@@ -62,8 +62,11 @@ const GestureMap = () => {
 
   const submitMappings = async () => {
     try {
-      const response = await fetch("http://localhost:5000/gesture-mappings", {
+      const response = await fetch("http://localhost:5000/update-gesture-mappings", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json", // Set the Content-Type header
+        },
         body: JSON.stringify(gestureMappings),
       });
       const data = await response.json();
