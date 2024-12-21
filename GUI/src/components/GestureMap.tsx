@@ -53,13 +53,10 @@ const GestureMap = () => {
 
   const actions: Action[] = [
     { internal: "unmapped", display: "Unmapped" },
-    { internal: "action1", display: "Action 1" },
-    { internal: "action2", display: "Action 2" },
-    { internal: "action3", display: "Action 3" },
-    { internal: "action4", display: "Action 4" },
-    { internal: "action5", display: "Action 5" },
-    { internal: "action6", display: "Action 6" },
-    { internal: "action7", display: "Action 7" },
+    { internal: "mute", display: "Mute" },
+    { internal: "volume_up", display: "Volume Up" },
+    { internal: "volume_down", display: "Volume Down" },
+    { internal: "play_pause", display: "Play/Pause" },
   ];
 
   const gestures: Gesture[] = [
