@@ -6,12 +6,11 @@ from customAlgos import convexity_defects, angle_between_points, get_palm_center
 from motionFunc import motion_add_point_to_buffer, motion_handle_buffer_reset, motion_track_points
 
 # debug related stuff
-current_camera = 0 # default webcam
+# current_camera = 0 # default webcam
 pause = False
 quit = False
 
 # Initialize webcam
-# cap = cv2.VideoCapture(current_camera)
 
 def toggle_camera():
     # Using the global variables
@@ -49,7 +48,9 @@ def handle_key():
         toggle_pause()
 
 
-def gesture_recognition_loop(debug=True,api=False,frame=None):
+def gesture_recognition_loop(debug=True,frame=None,current_camera=0,color_mode="HSV",increased_ratio=0.25):
+    cap = cv2.VideoCapture(current_camera)
+
     while True:
         # Capture the frame twice a second
 
@@ -60,14 +61,13 @@ def gesture_recognition_loop(debug=True,api=False,frame=None):
             break
         if pause:
             continue
-        ## if not api mode the function get its frame (self supplied)
-        if(api == False):
-            cv2.waitKey(50)
-            ret, frame = cap.read()
-            if not ret:
-                print("Failed to grab frame. Exiting...")
-                break
-            frame = cv2.flip(frame, 1)
+     
+        cv2.waitKey(50)
+        ret, frame = cap.read()
+        if not ret:
+            print("Failed to grab frame. Exiting...")
+            break
+        frame = cv2.flip(frame, 1)
     
         # Draw the ROI rectangle
         # cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
@@ -75,7 +75,7 @@ def gesture_recognition_loop(debug=True,api=False,frame=None):
         # Apply image filtering and gesture recognition
         # roi, thresh, contours = imageFiltering(frame)
         frame = cv2.GaussianBlur(frame, (5, 5), 0)
-        results = segmenter(frame)
+        results = segmenter(frame,color_mode,increased_ratio)
 
         # At start we may not have a hand in the frame
         if len(results) == 2:
@@ -184,9 +184,7 @@ def gesture_recognition_loop(debug=True,api=False,frame=None):
             cv2.imshow("Frame", frame)
         
         # motion_handle_roi_buffer_reset()
-        if(debug == False):
-            return gesture,motion_detected,motion_last_detected,direction
-
+      
 
     cap.release()
     cv2.destroyAllWindows()

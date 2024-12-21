@@ -5,6 +5,20 @@ export const StartPage = () => {
   const handleNavigate = () => {
     navigate("/video-feed"); 
   };
+  const fetchGesture = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/recognize_gesture",
+        {
+          method: "POST",
+        }
+      );
+      
+    } catch (error) {
+    
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-center items-center mx-auto">
@@ -21,7 +35,7 @@ export const StartPage = () => {
       </div>
       <h1 className="text-6xl mb-8">Media Control</h1>
       <button
-        onClick={handleNavigate}
+        onClick={fetchGesture}
         className="w-50 text-xl px-6 py-3 text-white font-semibold rounded-lg border-none  
                                                 transition duration-300 bg-violet-600 hover:bg-slate-900 hover:cursor-pointer"
       >

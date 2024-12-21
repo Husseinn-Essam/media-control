@@ -41,11 +41,11 @@ def isolate_hand(capturedFrame):
 
 
 
-def segmenter(capturedFrame, mode='HSV'):
+def segmenter(capturedFrame, mode='HSV',increase_ratio=0.25):
     # preprocess the frame
     capturedFrame, thresh_frame = preprocess_frame(capturedFrame, mode)
     # segment the hand
-    hand_segment = segment_hand(thresh_frame, capturedFrame)
+    hand_segment = segment_hand(thresh_frame, capturedFrame, increase_ratio)
     if hand_segment is not None and len(hand_segment) == 4:
         roi = capturedFrame[hand_segment[1]:hand_segment[1] + hand_segment[3], hand_segment[0]:hand_segment[0] + hand_segment[2]]
         isolated_hand = isolate_hand(capturedFrame)
