@@ -15,6 +15,16 @@ interface GestureMappings {
   [key: string]: string;
 }
 
+interface Direction {
+  internal: string;
+  display: string;
+}
+
+interface Motion {
+  internal: string;
+  display: string;
+}
+
 const GestureMap = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [gestureMappings, setGestureMappings] = useState<GestureMappings>({
@@ -25,6 +35,20 @@ const GestureMap = () => {
     fiveFinger: "unmapped",
     rockOn: "unmapped",
     fist: "unmapped",
+  });
+
+  const [directionMappings, setDirectionMappings] = useState<GestureMappings>({
+    oneFingerUp: "unmapped",
+    oneFingerDown: "unmapped",
+    oneFingerLeft: "unmapped",
+    oneFingerRight: "unmapped",
+  });
+
+  const [motionMappings, setMotionMappings] = useState<GestureMappings>({
+    moveHandUp: "unmapped",
+    moveHandDown: "unmapped",
+    moveHandLeft: "unmapped",
+    moveHandRight: "unmapped",
   });
 
   const actions: Action[] = [
@@ -48,11 +72,37 @@ const GestureMap = () => {
     { internal: "fist", display: "Fist" },
   ];
 
-  const handleMappingChange = (gesture: string, action: string) => {
-    setGestureMappings((prevMappings) => ({
-      ...prevMappings,
-      [gesture]: action,
-    }));
+  const directions: Direction[] = [
+    { internal: "oneFingerUp", display: "One Finger Up" },
+    { internal: "oneFingerDown", display: "One Finger Down" },
+    { internal: "oneFingerLeft", display: "One Finger Left" },
+    { internal: "oneFingerRight", display: "One Finger Right" },
+  ];
+
+  const motions: Motion[] = [
+    { internal: "moveHandUp", display: "Move Hand Up" },
+    { internal: "moveHandDown", display: "Move Hand Down" },
+    { internal: "moveHandLeft", display: "Move Hand Left" },
+    { internal: "moveHandRight", display: "Move Hand Right" },
+  ];
+
+  const handleMappingChange = (mappingType: string, key: string, action: string) => {
+    if (mappingType === "gesture") {
+      setGestureMappings((prevMappings) => ({
+        ...prevMappings,
+        [key]: action,
+      }));
+    } else if (mappingType === "direction") {
+      setDirectionMappings((prevMappings) => ({
+        ...prevMappings,
+        [key]: action,
+      }));
+    } else if (mappingType === "motion") {
+      setMotionMappings((prevMappings) => ({
+        ...prevMappings,
+        [key]: action,
+      }));
+    }
   };
 
   const navigate = useNavigate();
@@ -67,12 +117,16 @@ const GestureMap = () => {
         headers: {
           "Content-Type": "application/json", // Set the Content-Type header
         },
-        body: JSON.stringify(gestureMappings),
+        body: JSON.stringify({
+          gestureMappings,
+          directionMappings,
+          motionMappings,
+        }),
       });
       const data = await response.json();
-      console.log("Gesture Mappings:", data);
+      console.log("Mappings:", data);
     } catch (error) {
-      console.error("Error submitting gesture mappings:", error);
+      console.error("Error submitting mappings:", error);
     }
   };
 
@@ -82,10 +136,12 @@ const GestureMap = () => {
         setLoading(true);
         const response = await fetch("http://localhost:5000/gesture-mappings");
         const data = await response.json();
-        setGestureMappings(data);
+        setGestureMappings(data.gestureMappings);
+        setDirectionMappings(data.directionMappings);
+        setMotionMappings(data.motionMappings);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching gesture mappings:", error);
+        console.error("Error fetching mappings:", error);
         setLoading(false);
       }
     };
@@ -93,8 +149,15 @@ const GestureMap = () => {
     fetchMappings();
   }, []);
 
-  const getAvailableActions = (currentGesture: string): Action[] => {
-    const assignedActions = Object.values(gestureMappings).filter(action => action !== "unmapped" && action !== gestureMappings[currentGesture]);
+  const getAvailableActions = (currentKey: string): Action[] => {
+    let assignedActions: string[] = [];
+    if (gestureMappings[currentKey] !== undefined) {
+      assignedActions = Object.values(gestureMappings).filter(action => action !== "unmapped" && action !== gestureMappings[currentKey]);
+    } else if (directionMappings[currentKey] !== undefined) {
+      assignedActions = Object.values(directionMappings).filter(action => action !== "unmapped" && action !== directionMappings[currentKey]);
+    } else if (motionMappings[currentKey] !== undefined) {
+      assignedActions = Object.values(motionMappings).filter(action => action !== "unmapped" && action !== motionMappings[currentKey]);
+    }
     return actions.filter(action => !assignedActions.includes(action.internal));
   };
 
@@ -102,37 +165,68 @@ const GestureMap = () => {
     <div>
       <h1>Gesture Mapping</h1>
       <div className="flex flex-col gap-4 w-full min-w-[300px]">
-        {loading ? "Retrieving settings configuration..." : <>
-          {gestures.map(({ internal: gestureInternal, display: gestureDisplay }) => (
-            <div key={gestureInternal} className="flex flex-row justify-between items-center">
-              <label>{gestureDisplay}</label>
-              <select
-                className="mt-2 mb-2 p-2 border-none text-white rounded"
-                value={gestureMappings[gestureInternal]}
-                onChange={(e) => handleMappingChange(gestureInternal, e.target.value)}
-              >
-                {getAvailableActions(gestureInternal).map(({ internal: actionInternal, display: actionDisplay }) => (
-                  <option key={actionInternal} value={actionInternal}>
-                    {actionDisplay}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
-        </>}
+        <h2>Gestures</h2>
+        {gestures.map(({ internal: gestureInternal, display: gestureDisplay }) => (
+          <div key={gestureInternal} className="flex flex-row justify-between items-center">
+            <label>{gestureDisplay}</label>
+            <select
+              className="mt-2 mb-2 p-2 border-none text-white rounded"
+              value={gestureMappings[gestureInternal]}
+              onChange={(e) => handleMappingChange("gesture", gestureInternal, e.target.value)}
+            >
+              {getAvailableActions(gestureInternal).map(({ internal: actionInternal, display: actionDisplay }) => (
+                <option key={actionInternal} value={actionInternal}>
+                  {actionDisplay}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
+        <h2>Directions</h2>
+        {directions.map(({ internal: directionInternal, display: directionDisplay }) => (
+          <div key={directionInternal} className="flex flex-row justify-between items-center">
+            <label>{directionDisplay}</label>
+            <select
+              className="mt-2 mb-2 p-2 border-none text-white rounded"
+              value={directionMappings[directionInternal]}
+              onChange={(e) => handleMappingChange("direction", directionInternal, e.target.value)}
+            >
+              {getAvailableActions(directionInternal).map(({ internal: actionInternal, display: actionDisplay }) => (
+                <option key={actionInternal} value={actionInternal}>
+                  {actionDisplay}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
+        <h2>Motions</h2>
+        {motions.map(({ internal: motionInternal, display: motionDisplay }) => (
+          <div key={motionInternal} className="flex flex-row justify-between items-center">
+            <label>{motionDisplay}</label>
+            <select
+              className="mt-2 mb-2 p-2 border-none text-white rounded"
+              value={motionMappings[motionInternal]}
+              onChange={(e) => handleMappingChange("motion", motionInternal, e.target.value)}
+            >
+              {getAvailableActions(motionInternal).map(({ internal: actionInternal, display: actionDisplay }) => (
+                <option key={actionInternal} value={actionInternal}>
+                  {actionDisplay}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
       </div>
       <div className="flex flex-col justify-center">
         <button
           onClick={submitMappings}
-          className="mt-4 p-2 border-none text-white rounded cursor-pointer
-        text-xl px-6 py-3 font-semibold transition duration-300 bg-violet-600 hover:bg-slate-900"
+          className="mt-4 p-2 border-none text-white rounded cursor-pointer text-xl px-6 py-3 font-semibold transition duration-300 bg-violet-600 hover:bg-slate-900"
         >
           Confirm Gesture Mappings
         </button>
         <button
           onClick={handleNavigate}
-          className="mt-4 p-2 border-none text-white rounded cursor-pointer
-          text-xl px-6 py-3 font-semibold"
+          className="mt-4 p-2 border-none text-white rounded cursor-pointer text-xl px-6 py-3 font-semibold"
         >
           Go Back
         </button>

@@ -31,15 +31,33 @@ settings = load_json_file(SETTINGS_FILE, {
     "bounded_ratio": 0.25
 })
 
-gesture_mappings = load_json_file(GESTURE_MAPPINGS_FILE, {
-    "oneFinger": "unmapped",
-    "twoFinger": "unmapped",
-    "threeFinger": "unmapped",
-    "fourFinger": "unmapped",
-    "fiveFinger": "unmapped",
-    "rockOn": "unmapped",
-    "fist": "unmapped",
+mappings = load_json_file(GESTURE_MAPPINGS_FILE, {
+    "gestureMappings": {
+        "oneFinger": "unmapped",
+        "twoFinger": "unmapped",
+        "threeFinger": "unmapped",
+        "fourFinger": "unmapped",
+        "fiveFinger": "unmapped",
+        "rockOn": "unmapped",
+        "fist": "unmapped",
+    },
+    "directionMappings": {
+        "oneFingerUp": "unmapped",
+        "oneFingerDown": "unmapped",
+        "oneFingerLeft": "unmapped",
+        "oneFingerRight": "unmapped",
+    },
+    "motionMappings": {
+        "moveHandUp": "unmapped",
+        "moveHandDown": "unmapped",
+        "moveHandLeft": "unmapped",
+        "moveHandRight": "unmapped",
+    }
 })
+
+gesture_mappings = {"gestureMappings": mappings.get("gestureMappings", {})}
+direction_mappings = {"directionMappings": mappings.get("directionMappings", {})}
+motion_mappings = {"motionMappings": mappings.get("motionMappings", {})}
 
 @app.route('/recognize_gesture', methods=['POST'])
 def recognize_gesture():
@@ -90,23 +108,37 @@ def get_system_settings():
 @app.route('/update-gesture-mappings', methods=['POST'])
 def update_gesture_mappings():
     """Update the gesture mappings based on the request."""
-    global gesture_mappings
+    global gesture_mappings, direction_mappings, motion_mappings
     try:
         if request.content_type != 'application/json':
             return jsonify({"error": "Unsupported Media Type: Content-Type must be application/json"}), 415
 
         data = request.get_json()  
         
-        for gesture in gesture_mappings.keys():
-            if gesture in data:
-                gesture_mappings[gesture] = data[gesture]
+        if 'gestureMappings' in data:
+            gesture_mappings['gestureMappings'] = data['gestureMappings']
+        if 'directionMappings' in data:
+            direction_mappings['directionMappings'] = data['directionMappings']
+        if 'motionMappings' in data:
+            motion_mappings['motionMappings'] = data['motionMappings']
         
         print(f"Updated gesture mappings: {gesture_mappings}")
+        print(f"Updated direction mappings: {direction_mappings}")
+        print(f"Updated motion mappings: {motion_mappings}")
 
-        # Save the updated gesture mappings to the configuration file
-        save_json_file(GESTURE_MAPPINGS_FILE, gesture_mappings)
+        # Save the updated mappings to the configuration file
+        save_json_file(GESTURE_MAPPINGS_FILE, {
+            "gestureMappings": gesture_mappings['gestureMappings'],
+            "directionMappings": direction_mappings['directionMappings'],
+            "motionMappings": motion_mappings['motionMappings']
+        })
         
-        return jsonify({"message": "Gesture mappings updated successfully", "gesture_mappings": gesture_mappings})
+        return jsonify({
+            "message": "Gesture mappings updated successfully",
+            "gesture_mappings": gesture_mappings,
+            "direction_mappings": direction_mappings,
+            "motion_mappings": motion_mappings
+        })
     except Exception as e:
         print(f"Error updating gesture mappings: {e}")
         return jsonify({"error": "Internal server error"}), 500
@@ -115,7 +147,11 @@ def update_gesture_mappings():
 def get_gesture_mappings():
     """Retrieve the current gesture mappings."""
     try:
-        return jsonify(gesture_mappings)
+        return jsonify({
+            "gestureMappings": gesture_mappings['gestureMappings'],
+            "directionMappings": direction_mappings['directionMappings'],
+            "motionMappings": motion_mappings['motionMappings']
+        })
     except Exception as e:
         print(f"Error retrieving gesture mappings: {e}")
         return jsonify({"error": "Internal server error"}), 500
