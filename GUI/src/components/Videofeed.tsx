@@ -50,11 +50,11 @@ const VideoFeed = () => {
   return (
     <div>
       <h1>Live Video Feed</h1>
-      <img
+      {/* <img
         src="http://localhost:5000/video_feed"
         alt="Video Stream"
         style={{ width: "100%", height: "auto" }}
-      />
+      /> */}
       <div>
         <h1>Gesture Recognition</h1>
        
