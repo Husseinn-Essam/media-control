@@ -63,7 +63,6 @@ motion_mappings = {"motionMappings": mappings.get("motionMappings", {})}
 def recognize_gesture():
     """Process the current frame for gesture recognition."""
     try:
-        # Assuming gesture_recognition_loop returns a tuple of (gesture, motion_detected, direction)
         gesture_recognition_loop(debug=True, frame=None, current_camera=settings["camera"], color_mode=settings["color_mode"], increased_ratio=settings["bounded_ratio"])
     except Exception as e:
         print(f"Error processing gesture: {e}")
@@ -77,9 +76,8 @@ def update_system_settings():
         if request.content_type != 'application/json':
             return jsonify({"error": "Unsupported Media Type: Content-Type must be application/json"}), 415
 
-        data = request.get_json()  # Parse the incoming JSON request
+        data = request.get_json()  
         
-        # Validate incoming data (add more validation as needed)
         if 'camera' in data:
             settings["camera"] = data['camera']
         if 'color_mode' in data:
@@ -87,8 +85,7 @@ def update_system_settings():
         if 'bounded_ratio' in data:
             settings["bounded_ratio"] = data['bounded_ratio']
 
-        # Log the updated settings (this can be customized further)
-        print(f"Updated settings: Camera: {settings['camera']}, Color Mode: {settings['color_mode']}, Bounded Ratio: {settings['bounded_ratio']}")
+        print(f"Updated settings: Camera: {settings["camera"]}, Color Mode: {settings["color_mode"]}, Bounded Ratio: {settings["bounded_ratio"]}")
 
         
         # Save the updated settings to the configuration file
@@ -116,9 +113,8 @@ def update_gesture_mappings():
         if request.content_type != 'application/json':
             return jsonify({"error": "Unsupported Media Type: Content-Type must be application/json"}), 415
 
-        data = request.get_json()  # Parse the incoming JSON request
+        data = request.get_json()  
         
-        # Validate incoming data (add more validation as needed)
         if 'gestureMappings' in data:
             gesture_mappings['gestureMappings'] = data['gestureMappings']
         if 'directionMappings' in data:
@@ -126,7 +122,6 @@ def update_gesture_mappings():
         if 'motionMappings' in data:
             motion_mappings['motionMappings'] = data['motionMappings']
         
-        # Log the updated mappings (this can be customized further)
         print(f"Updated gesture mappings: {gesture_mappings}")
         print(f"Updated direction mappings: {direction_mappings}")
         print(f"Updated motion mappings: {motion_mappings}")
