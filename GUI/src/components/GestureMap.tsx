@@ -16,7 +16,7 @@ interface GestureMappings {
 }
 
 const GestureMap = () => {
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [gestureMappings, setGestureMappings] = useState<GestureMappings>({
     oneFinger: "unmapped",
     twoFinger: "unmapped",
@@ -121,13 +121,15 @@ const GestureMap = () => {
       <div className="flex flex-col justify-center">
         <button
           onClick={submitMappings}
-          className="mt-4 p-2 border-none text-white rounded cursor-pointer bg-blue-500 hover:bg-blue-700"
+          className="mt-4 p-2 border-none text-white rounded cursor-pointer
+        text-xl px-6 py-3 font-semibold transition duration-300 bg-violet-600 hover:bg-slate-900"
         >
           Confirm Gesture Mappings
         </button>
         <button
           onClick={handleNavigate}
-          className="mt-4 p-2 border-none text-white rounded cursor-pointer"
+          className="mt-4 p-2 border-none text-white rounded cursor-pointer
+          text-xl px-6 py-3 font-semibold"
         >
           Go Back
         </button>

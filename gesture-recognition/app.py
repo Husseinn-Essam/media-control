@@ -18,6 +18,7 @@ def recognize_gesture():
     """Process the current frame for gesture recognition."""
     try:
     
+        # Assuming gesture_recognition_loop returns a tuple of (gesture, motion_detected, direction)
         gesture_recognition_loop(debug=True, frame=None, current_camera=current_camera, color_mode=color_mode, increased_ratio=bounding_box_ratio)
 
            
@@ -31,8 +32,9 @@ def update_system_settings():
     """Update the system settings based on the request."""
     global current_camera, color_mode, bounding_box_ratio
     try:
-        data = request.get_json() 
+        data = request.get_json()  # Parse the incoming JSON request
         
+        # Validate incoming data (add more validation as needed)
         if 'camera' in data:
             current_camera = data['camera']
         if 'color_mode' in data:
@@ -40,9 +42,14 @@ def update_system_settings():
         if 'bounded_ratio' in data:
             bounding_box_ratio = data['bounded_ratio']
         
+        # Log the updated settings (this can be customized further)
         print(f"Updated settings: Camera: {current_camera}, Color Mode: {color_mode}, Bounded Ratio: {bounding_box_ratio}")
         
-        return jsonify({"message": "Settings updated successfully"}), 200
+        return jsonify({"message": "Settings updated successfully", "settings": {
+            "camera": current_camera,
+            "color_mode": color_mode,
+            "bounded_ratio": bounding_box_ratio
+        }})
     except Exception as e:
         print(f"Error updating settings: {e}")
         return jsonify({"error": "Internal server error"}), 500

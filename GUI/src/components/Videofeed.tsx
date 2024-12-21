@@ -68,10 +68,8 @@ const VideoFeed = () => {
       </div>
       <button
         onClick={handleNavigate}
-        className="mt-4 p-2 border-none text-white rounded cursor-pointer"
-      >
-        Go Back
-      </button>
+        className="mt-4 p-2 border-none text-white rounded cursor-pointer
+          text-xl px-6 py-3 font-semibold">Go Back</button>
     </div>
   );
 };
