@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Settings = () => {
+  const [loading, setLoading] = useState<boolean>(false);
   const [selectedCamera, setSelectedCamera] = useState<number>(0);
   const [selectedColorMode, setSelectedColorMode] = useState<string>("HSV");
   const [boundedRatio, setBoundedRatio] = useState<number>(0.25);
@@ -12,6 +13,7 @@ const Settings = () => {
   };
 
     const submitSettings = async () => {
+      if (loading) return;
       try {
         const response = await fetch(
           "http://localhost:5000/settings",
@@ -31,12 +33,32 @@ const Settings = () => {
       }
     };
 
+    useEffect(() => {
+      const fetchSettings = async () => {
+        try {
+          setLoading(true);
+          const response = await fetch("http://localhost:5000/settings");
+          const data = await response.json();
+          setSelectedCamera(data.camera);
+          setSelectedColorMode(data.color_mode);
+          setBoundedRatio(data.bounded_ratio);
+          setLoading(false);
+        } catch (error) {
+          console.error("Error fetching settings:", error);
+          setLoading(false);
+        }
+      };
+
+      fetchSettings();
+    }, []);
+
 
   return (
     <div>
       <h1>System Settings</h1>
       <div className="flex flex-col gap-4 w-full min-w-[300px]">
-        <div className="flex flex-row justify-between items-center">
+        {loading ? "Retrieving settings configuration..." : <>
+          <div className="flex flex-row justify-between items-center">
           <label>Selected Camera</label>
           <select
             className="mt-2 mb-2 p-2 border-none text-white rounded"
@@ -66,13 +88,15 @@ const Settings = () => {
             min="0"
             value={boundedRatio}
             onChange={(e) => setBoundedRatio(Number(e.target.value))}
-            className="mt-2 mb-2 p-2 border-none text-white rounded w-14"
+            className="mt-2 mb-2 p-2 border-none text-white rounded w-14 text-center"
           />
         </div>
+        </>}
       </div>
       <div className="flex flex-col justify-center">
       <button
         onClick={submitSettings}
+        disabled={loading}
         className="mt-4 p-2 border-none text-white rounded cursor-pointer bg-blue-500 hover:bg-blue-700"
       >
         Confirm Changes
