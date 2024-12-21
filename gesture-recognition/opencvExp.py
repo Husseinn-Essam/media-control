@@ -73,20 +73,34 @@ while True:
     # Apply image filtering and gesture recognition
     # roi, thresh, contours = imageFiltering(frame)
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
-    thresh, roi, roi_y_range, roi_x_range = segmenter(frame)
+    results = segmenter(frame)
+
+    # At start we may not have a hand in the frame
+    if len(results) == 2:
+        thresh, roi  = results
+        full_frame_segmented = None 
+        capturedFrame = np.zeros_like(frame)  
+    else:
+        thresh, roi,capturedFrame ,full_frame_segmented = results
     contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    
+    countoursFull , _ = cv2.findContours(full_frame_segmented, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     drawing = np.zeros(roi.shape, np.uint8)
-   
+    drawing2 = np.zeros(roi.shape, np.uint8)
+    
 
     try:
 
         contour = max(contours, key=lambda c: cv2.contourArea(c), default=0)
+        contourFull = max(countoursFull, key=lambda c: cv2.contourArea(c), default=0)
         palmCenter = get_palm_center(contour)
+        palmCenterFull = get_palm_center(contourFull)
         cv2.circle(drawing, palmCenter, 5, (0, 0, 255), -1)
-        #print(palmCenter)
-        motion_add_point_to_buffer((palmCenter[0], palmCenter[1]))
+        cv2.circle(full_frame_segmented, palmCenterFull, 5, (0, 0, 255), -1)
+        motion_add_point_to_buffer((palmCenterFull[0], palmCenterFull[1]))
         hull = cv2.convexHull(contour)
         cv2.drawContours(drawing, [contour], -1, (0, 255, 0), 1)
+        cv2.drawContours(drawing2, [contourFull], -1, (0, 255, 0), 1)
         cv2.drawContours(drawing, [hull], -1, (0, 0, 255), 1)
    
         hull_indices = cv2.convexHull(contour, returnPoints=False).flatten()
@@ -126,7 +140,7 @@ while True:
         elif count_defects == 0:
             if solidity > 0.6:  # Fist: High solidity (compact shape)
                 gesture = "FIST"
-            else:  # Open hand with one finger extended
+            else:  # hand with one finger pointing
                 gesture = "ONE"
             # check direction
             direction = detect_pointing_direction(frame, contour)
@@ -154,10 +168,14 @@ while True:
     except:
         pass
     
-    # Show the processed frames
+    # display the frames
     cv2.imshow("ROI", cv2.resize(roi, (300, 400)))
     cv2.imshow("Threshold", cv2.resize(thresh, (300, 400)))
     cv2.imshow("Drawing", cv2.resize(drawing, (300, 400)))
+    # cv2.imshow("Drawing2", cv2.resize(drawing2, (300, 400)))
+    cv2.imshow("capturedFrame", capturedFrame)
+    if full_frame_segmented is not None and np.any(full_frame_segmented):
+        cv2.imshow("full_frame_segmented", full_frame_segmented)
     cv2.imshow("Frame", frame)
     
     # motion_handle_roi_buffer_reset()
