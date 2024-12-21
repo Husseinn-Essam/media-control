@@ -34,3 +34,9 @@ yarn.lock
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+# Model Checkpoints
+*.ckpt
+
+# Generated model files
+*.pyc
