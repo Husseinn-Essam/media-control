@@ -11,7 +11,7 @@ pause = False
 quit = False
 
 # Initialize webcam
-cap = cv2.VideoCapture(current_camera)
+# cap = cv2.VideoCapture(current_camera)
 
 def toggle_camera():
     # Using the global variables
@@ -49,7 +49,7 @@ def handle_key():
         toggle_pause()
 
 
-def gesture_recognition_loop(debug=True,frame=None):
+def gesture_recognition_loop(debug=True,api=False,frame=None):
     while True:
         # Capture the frame twice a second
 
@@ -60,8 +60,8 @@ def gesture_recognition_loop(debug=True,frame=None):
             break
         if pause:
             continue
-        ## in debug mode we function get its frame (self supplied)
-        if(debug == True):
+        ## if not api mode the function get its frame (self supplied)
+        if(api == False):
             cv2.waitKey(50)
             ret, frame = cap.read()
             if not ret:
@@ -172,32 +172,24 @@ def gesture_recognition_loop(debug=True,frame=None):
 
         except:
             pass
-        # return json that has the gesture and the motion detected and direction
-        # display the frames
-        cv2.imshow("ROI", cv2.resize(roi, (300, 400)))
-        cv2.imshow("Threshold", cv2.resize(thresh, (300, 400)))
-        cv2.imshow("Drawing", cv2.resize(drawing, (300, 400)))
-        # cv2.imshow("Drawing2", cv2.resize(drawing2, (300, 400)))
-        cv2.imshow("capturedFrame", capturedFrame)
-        if full_frame_segmented is not None and np.any(full_frame_segmented):
-            cv2.imshow("full_frame_segmented", full_frame_segmented)
-        cv2.imshow("Frame", frame)
+        # debug mode shows different types for frames
+        if (debug == True):
+            # display the frames
+            cv2.imshow("ROI", cv2.resize(roi, (300, 400)))
+            cv2.imshow("Threshold", cv2.resize(thresh, (300, 400)))
+            cv2.imshow("Drawing", cv2.resize(drawing, (300, 400)))
+            cv2.imshow("capturedFrame", capturedFrame)
+            if full_frame_segmented is not None and np.any(full_frame_segmented):
+                cv2.imshow("full_frame_segmented", full_frame_segmented)
+            cv2.imshow("Frame", frame)
         
         # motion_handle_roi_buffer_reset()
         if(debug == False):
-            
-            result = {}
-            if(gesture):
-                result = {
-                    "gesture": gesture,
-                    "motion_detected": motion_detected,
-                    "direction": direction
-                }
-            return result
+            return gesture,motion_detected,motion_last_detected,direction
 
 
     cap.release()
     cv2.destroyAllWindows()
 
 
-gesture_recognition_loop(debug=True)
+# gesture_recognition_loop(debug=True,api=False)

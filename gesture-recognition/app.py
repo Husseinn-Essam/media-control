@@ -2,19 +2,26 @@ from flask import Flask, Response, jsonify, request
 import cv2
 import threading
 from flask_cors import CORS
+import base64
 
+from opencvExp import gesture_recognition_loop
 app = Flask(__name__)
 CORS(app)
 
-cap = cv2.VideoCapture(0)
 
+current_camera = 0
+cap = cv2.VideoCapture(current_camera)
+
+# Shared variable for the current frame
 current_frame = None
 
+# Lock for thread-safe frame access
 frame_lock = threading.Lock()
 
 def capture_frames():
     """Continuously capture frames from the webcam."""
     global current_frame
+    cv2.waitKey(100)
     while True:
         success, frame = cap.read()
         if success:
@@ -45,20 +52,30 @@ def video_feed():
 @app.route('/recognize_gesture', methods=['POST'])
 def recognize_gesture():
     """Process the current frame for gesture recognition."""
-    with frame_lock:
-        if current_frame is None:
-            return jsonify({"error": "No frame available"}), 400
-       
-        
-        
-        
-        
-        # print(f"Gesture: {gesture_detected}, Contours: {num_contours}")
-        # return jsonify({
-        #     "gesture": gesture_detected,
-        #     "contours": num_contours
-        # })
+    try:
+        with frame_lock:
+            if current_frame is None:
+                return jsonify({"error": "No frame available"}), 400
+            
+            # Assuming gesture_recognition_loop returns a tuple of (gesture, motion_detected, direction)
+            gesture, motion_detected, motion_last_detected, direction= gesture_recognition_loop(debug=False, api=True, frame=current_frame)
 
+            # Construct the response only if debug is False
+            result = {}
+            if gesture:
+                result = {
+                    "gesture": gesture,
+                    "motion_detected": motion_detected,
+                    "motion_last_detected": motion_last_detected,
+                    "direction": direction,
+                
+                }
+            return jsonify(result)
+    except Exception as e:
+        print(f"Error processing gesture: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+       
 @app.route('/')
 def index():
     return "API is running. Endpoints: /video_feed, /recognize_gesture"
