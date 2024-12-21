@@ -150,11 +150,14 @@ const GestureMap = () => {
   }, []);
 
   const getAvailableActions = (currentKey: string): Action[] => {
-    const assignedActions = [
-      ...Object.values(gestureMappings),
-      ...Object.values(directionMappings),
-      ...Object.values(motionMappings),
-    ].filter(action => action !== "unmapped" && action !== gestureMappings[currentKey] && action !== directionMappings[currentKey] && action !== motionMappings[currentKey]);
+    let assignedActions: string[] = [];
+    if (gestureMappings[currentKey] !== undefined) {
+      assignedActions = Object.values(gestureMappings).filter(action => action !== "unmapped" && action !== gestureMappings[currentKey]);
+    } else if (directionMappings[currentKey] !== undefined) {
+      assignedActions = Object.values(directionMappings).filter(action => action !== "unmapped" && action !== directionMappings[currentKey]);
+    } else if (motionMappings[currentKey] !== undefined) {
+      assignedActions = Object.values(motionMappings).filter(action => action !== "unmapped" && action !== motionMappings[currentKey]);
+    }
     return actions.filter(action => !assignedActions.includes(action.internal));
   };
 
