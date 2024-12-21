@@ -4,6 +4,22 @@ import cv2
 import os
 import mediapipe as mp
 
+def translate_number_to_string(number):
+    mapping = {
+        9: "FIVE",
+        13: "FIVE",
+        10: "TWO",
+        6: "ONE",
+        4: "FIST",
+        7: "One Finger Left",
+        2: "One Finger Right",
+        1: "One Finger Up",
+        3: "One Finger Down",
+        30: "One Finger Down",
+        12: "ROCK ON"
+    }
+    return mapping.get(number, "unknown")
+
 # Set GPU configuration (optional, for memory growth)
 physical_devices = tf.config.experimental.list_physical_devices("GPU")
 if physical_devices:
@@ -60,10 +76,22 @@ while cap.isOpened():
             # Display predictions on the frame
             print(f"Predicted Class: {predicted_class}")
             text = f"Predicted Class: {predicted_class[0]}"
+            
+            gesture_text = translate_number_to_string(predicted_class[0])
+            cv2.putText(
+                frame,
+                gesture_text,
+                (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 255),
+                2,
+                cv2.LINE_AA,
+            )
             cv2.putText(
                 frame,
                 text,
-                (10, 30),
+                (10, 60),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 1,
                 (0, 255, 0),
