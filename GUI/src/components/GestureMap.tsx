@@ -164,58 +164,64 @@ const GestureMap = () => {
   return (
     <div>
       <h1>Gesture Mapping</h1>
-      <div className="flex flex-col gap-4 w-full min-w-[300px]">
-        <h2>Gestures</h2>
-        {gestures.map(({ internal: gestureInternal, display: gestureDisplay }) => (
-          <div key={gestureInternal} className="flex flex-row justify-between items-center">
-            <label>{gestureDisplay}</label>
-            <select
-              className="mt-2 mb-2 p-2 border-none text-white rounded"
-              value={gestureMappings[gestureInternal]}
-              onChange={(e) => handleMappingChange("gesture", gestureInternal, e.target.value)}
-            >
-              {getAvailableActions(gestureInternal).map(({ internal: actionInternal, display: actionDisplay }) => (
-                <option key={actionInternal} value={actionInternal}>
-                  {actionDisplay}
-                </option>
-              ))}
-            </select>
-          </div>
-        ))}
-        <h2>Directions</h2>
-        {directions.map(({ internal: directionInternal, display: directionDisplay }) => (
-          <div key={directionInternal} className="flex flex-row justify-between items-center">
-            <label>{directionDisplay}</label>
-            <select
-              className="mt-2 mb-2 p-2 border-none text-white rounded"
-              value={directionMappings[directionInternal]}
-              onChange={(e) => handleMappingChange("direction", directionInternal, e.target.value)}
-            >
-              {getAvailableActions(directionInternal).map(({ internal: actionInternal, display: actionDisplay }) => (
-                <option key={actionInternal} value={actionInternal}>
-                  {actionDisplay}
-                </option>
-              ))}
-            </select>
-          </div>
-        ))}
-        <h2>Motions</h2>
-        {motions.map(({ internal: motionInternal, display: motionDisplay }) => (
-          <div key={motionInternal} className="flex flex-row justify-between items-center">
-            <label>{motionDisplay}</label>
-            <select
-              className="mt-2 mb-2 p-2 border-none text-white rounded"
-              value={motionMappings[motionInternal]}
-              onChange={(e) => handleMappingChange("motion", motionInternal, e.target.value)}
-            >
-              {getAvailableActions(motionInternal).map(({ internal: actionInternal, display: actionDisplay }) => (
-                <option key={actionInternal} value={actionInternal}>
-                  {actionDisplay}
-                </option>
-              ))}
-            </select>
-          </div>
-        ))}
+      <div className="flex flex-row gap-12 w-full">
+        <div className="flex flex-col gap-4 w-1/3 min-w-[250px]">
+          <h2>Gestures</h2>
+          {gestures.map(({ internal: gestureInternal, display: gestureDisplay }) => (
+        <div key={gestureInternal} className="flex flex-row justify-between items-center">
+          <label>{gestureDisplay}</label>
+          <select
+            className="mt-2 mb-2 p-2 border-none text-white rounded"
+            value={gestureMappings[gestureInternal]}
+            onChange={(e) => handleMappingChange("gesture", gestureInternal, e.target.value)}
+          >
+            {getAvailableActions(gestureInternal).map(({ internal: actionInternal, display: actionDisplay }) => (
+          <option key={actionInternal} value={actionInternal}>
+            {actionDisplay}
+          </option>
+            ))}
+          </select>
+        </div>
+          ))}
+        </div>
+        <div className="flex flex-col gap-4 w-1/3 min-w-[250px]">
+          <h2>Directions</h2>
+          {directions.map(({ internal: directionInternal, display: directionDisplay }) => (
+        <div key={directionInternal} className="flex flex-row justify-between items-center">
+          <label>{directionDisplay}</label>
+          <select
+            className="mt-2 mb-2 p-2 border-none text-white rounded"
+            value={directionMappings[directionInternal]}
+            onChange={(e) => handleMappingChange("direction", directionInternal, e.target.value)}
+          >
+            {getAvailableActions(directionInternal).map(({ internal: actionInternal, display: actionDisplay }) => (
+          <option key={actionInternal} value={actionInternal}>
+            {actionDisplay}
+          </option>
+            ))}
+          </select>
+        </div>
+          ))}
+        </div>
+        <div className="flex flex-col gap-4 w-1/3 min-w-[250px]">
+          <h2>Motions</h2>
+          {motions.map(({ internal: motionInternal, display: motionDisplay }) => (
+        <div key={motionInternal} className="flex flex-row justify-between items-center">
+          <label>{motionDisplay}</label>
+          <select
+            className="mt-2 mb-2 p-2 border-none text-white rounded"
+            value={motionMappings[motionInternal]}
+            onChange={(e) => handleMappingChange("motion", motionInternal, e.target.value)}
+          >
+            {getAvailableActions(motionInternal).map(({ internal: actionInternal, display: actionDisplay }) => (
+          <option key={actionInternal} value={actionInternal}>
+            {actionDisplay}
+          </option>
+            ))}
+          </select>
+        </div>
+          ))}
+        </div>
       </div>
       <div className="flex flex-col justify-center">
         <button
