@@ -4,7 +4,7 @@ import math
 from segmenterFunc import segmenter
 from customAlgos import convexity_defects, angle_between_points, get_palm_center, is_rock_on, detect_pointing_direction, calcSolidity
 from motionFunc import motion_add_point_to_buffer, motion_handle_buffer_reset, motion_track_points
-
+from systemActions import perform_action
 # debug related stuff
 # current_camera = 0 # default webcam
 pause = False
@@ -48,7 +48,7 @@ def handle_key():
         toggle_pause()
 
 
-def gesture_recognition_loop(debug=True,frame=None,current_camera=0,color_mode="HSV",increased_ratio=0.25):
+def gesture_recognition_loop(gesture_mappings,debug=True,frame=None,current_camera=0,color_mode="HSV",increased_ratio=0.25):
     cap = cv2.VideoCapture(current_camera)
 
     while True:
@@ -165,12 +165,13 @@ def gesture_recognition_loop(debug=True,frame=None,current_camera=0,color_mode="
             motion_detected = motion_track_points()
             if motion_detected != None:
                 motion_last_detected = motion_detected
-             
+            perform_action(gesture,gesture_mappings)
             cv2.putText(frame, f"Gesture: {gesture}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             cv2.putText(frame, f"Detected Motion: {motion_detected}", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
             cv2.putText(frame, f"Last Detected Motion: {motion_last_detected}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
 
-        except:
+        except Exception as e:
+            print(f"Error processing frame: {e}")
             pass
         # debug mode shows different types for frames
         if (debug == True):
@@ -190,4 +191,12 @@ def gesture_recognition_loop(debug=True,frame=None,current_camera=0,color_mode="
     cv2.destroyAllWindows()
 
 
-# gesture_recognition_loop(debug=True,api=False)
+gesture_recognition_loop(debug=True,gesture_mappings={
+    "ONE": "unmapped",
+    "TWO": "mute",
+    "THREE": "volume_up",
+    "FOUR": "volume_down",
+    "FIVE": "play_pause",
+    "ROCK ON": "mute",
+    "FIST": "unmapped",
+})
