@@ -2,9 +2,11 @@ import { useNavigate } from "react-router-dom";
 
 export const StartPage = () => {
   const navigate = useNavigate();
-  const handleNavigate = () => {
-    navigate("/video-feed"); 
+  
+  const handleNavigate = (path: string) => {
+    navigate(path); 
   };
+  
   return (
     <div>
       <div className="flex justify-center items-center mx-auto">
@@ -20,13 +22,29 @@ export const StartPage = () => {
         </div>
       </div>
       <h1 className="text-6xl mb-8">Media Control</h1>
+      <div className="flex flex-col justify-center gap-4">
       <button
-        onClick={handleNavigate}
+        onClick={() => handleNavigate("/video-feed")}
         className="w-50 text-xl px-6 py-3 text-white font-semibold rounded-lg border-none  
                                                 transition duration-300 bg-violet-600 hover:bg-slate-900 hover:cursor-pointer"
       >
-        Start Feed
+        Start Feed 📹
       </button>
+      <button
+        onClick={() => handleNavigate("/gesture-mappings")}
+        className="w-50 text-xl px-6 py-3 text-white font-semibold rounded-lg border-none  
+                                                transition duration-300 bg-violet-600 hover:bg-slate-900 hover:cursor-pointer"
+      >
+        Gesture Mapping 🖐
+      </button>
+      <button
+        onClick={() => handleNavigate("/settings")}
+        className="w-50 text-xl px-6 py-3 text-white font-semibold rounded-lg border-none  
+                                                transition duration-300 bg-violet-600 hover:bg-slate-900 hover:cursor-pointer"
+      >
+        Settings ⚙️
+      </button>
+      </div>
     </div>
   );
 };
