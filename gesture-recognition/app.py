@@ -2,19 +2,14 @@ from flask import Flask, Response, jsonify, request
 import cv2
 import threading
 from flask_cors import CORS
-from skimage.color import rgb2gray
-from skimage.filters import gaussian, threshold_otsu
-from skimage.measure import label, regionprops
 
 app = Flask(__name__)
 CORS(app)
 
 cap = cv2.VideoCapture(0)
 
-# Shared variable for the current frame
 current_frame = None
 
-# Lock for thread-safe frame access
 frame_lock = threading.Lock()
 
 def capture_frames():
@@ -53,24 +48,16 @@ def recognize_gesture():
     with frame_lock:
         if current_frame is None:
             return jsonify({"error": "No frame available"}), 400
-        print("hi")
-        gray_frame = rgb2gray(current_frame)
-        blurred_frame = gaussian(gray_frame, sigma=1)
-        thresh_value = threshold_otsu(blurred_frame)
-        thresh_frame = blurred_frame > thresh_value
-
-        labeled_frame = label(thresh_frame)
-        regions = regionprops(labeled_frame)
-        num_contours = len(regions)
-
-        gesture_detected = "Unknown"
-        if num_contours > 0:
-            gesture_detected = "Hand Detected"
-        print(f"Gesture: {gesture_detected}, Contours: {num_contours}")
-        return jsonify({
-            "gesture": gesture_detected,
-            "contours": num_contours
-        })
+       
+        
+        
+        
+        
+        # print(f"Gesture: {gesture_detected}, Contours: {num_contours}")
+        # return jsonify({
+        #     "gesture": gesture_detected,
+        #     "contours": num_contours
+        # })
 
 @app.route('/')
 def index():

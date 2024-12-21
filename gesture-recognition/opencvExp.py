@@ -75,11 +75,11 @@ while True:
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
     results = segmenter(frame)
 
+    # At start we may not have a hand in the frame
     if len(results) == 2:
         thresh, roi  = results
-        full_frame_segmented = None  # Default value
-        capturedFrame = np.zeros_like(frame)  # Fallback placeholder
-
+        full_frame_segmented = None 
+        capturedFrame = np.zeros_like(frame)  
     else:
         thresh, roi,capturedFrame ,full_frame_segmented = results
     contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)

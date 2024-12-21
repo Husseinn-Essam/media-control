@@ -26,12 +26,11 @@ def isolate_hand(capturedFrame):
         x, y, w, h = hand_segment
         # Create a black frame with the same dimensions as the input frame
         black_frame = np.zeros_like(capturedFrame)
-        # Extract the region of interest (ROI) where the hand is located
+        # we get the ROI (cropped image where hand is located)
         roi = capturedFrame[y:y + h, x:x + w]
-        # Threshold the ROI to isolate the hand
+        # apply thresholding to get the mask of the hand
         hand_mask = skin_thresholding(roi)
-        # Place the isolated hand on the black frame
-        
+        # Place the isolated hand on the black frame which will have the same demensions as the input frame
         black_frame[y:y + h, x:x + w] = cv2.bitwise_and(roi, roi, mask=hand_mask)
         return black_frame
 
@@ -42,9 +41,9 @@ def isolate_hand(capturedFrame):
 
 
 
-def segmenter(capturedFrame):
+def segmenter(capturedFrame, mode='HSV'):
     # preprocess the frame
-    capturedFrame, thresh_frame = preprocess_frame(capturedFrame)
+    capturedFrame, thresh_frame = preprocess_frame(capturedFrame, mode)
     # segment the hand
     hand_segment = segment_hand(thresh_frame, capturedFrame)
     if hand_segment is not None and len(hand_segment) == 4:
@@ -56,7 +55,7 @@ def segmenter(capturedFrame):
     else:
         return thresh_frame, capturedFrame
 
-def segment_hand(thresh_frame, original_frame):
+def segment_hand(thresh_frame, original_frame, increase_ratio=0.25):
     # Convert to 8-bit integer if needed
     thresh_frame = thresh_frame.astype(np.uint8)
 
@@ -115,8 +114,7 @@ def segment_hand(thresh_frame, original_frame):
 
     # Draw the best bounding box
     cv2.rectangle(original_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-    # Increase the bounding box size by 25%
-    increase_ratio = 0.25
+    # Increase the bounding box size , Default: by 25%
     x, y, w, h = best_bounding_box
     x = max(0, x - int(increase_ratio / 2 * w))
     y = max(0, y - int(increase_ratio / 2 * h))
