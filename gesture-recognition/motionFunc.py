@@ -9,8 +9,8 @@ interval_duration = 2  # Seconds
 
 # Buffer settings
 BUFFER_LIMIT = 40  # Maximum number of points in the buffer before reset
-X_THRESHOLD = 30  # Minimum movement in the X direction to be considered as motion
-Y_THRESHOLD = 30 # Minimum movement in the Y direction to be considered as motion
+X_THRESHOLD = 120  # Minimum movement in the X direction to be considered as motion
+Y_THRESHOLD = 120 # Minimum movement in the Y direction to be considered as motion
 
 def motion_handle_buffer_reset():
     """Reset the point buffer after motion is detected and direction is determined."""

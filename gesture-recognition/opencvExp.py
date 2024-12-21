@@ -140,7 +140,7 @@ while True:
         elif count_defects == 0:
             if solidity > 0.6:  # Fist: High solidity (compact shape)
                 gesture = "FIST"
-            else:  # Open hand with one finger extended
+            else:  # hand with one finger pointing
                 gesture = "ONE"
             # check direction
             direction = detect_pointing_direction(frame, contour)
@@ -168,7 +168,7 @@ while True:
     except:
         pass
     
-    # Show the processed frames
+    # display the frames
     cv2.imshow("ROI", cv2.resize(roi, (300, 400)))
     cv2.imshow("Threshold", cv2.resize(thresh, (300, 400)))
     cv2.imshow("Drawing", cv2.resize(drawing, (300, 400)))
