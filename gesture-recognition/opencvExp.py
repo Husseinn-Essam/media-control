@@ -14,18 +14,18 @@ quit = False
 
 def toggle_camera():
     # Using the global variables
-    global cap, current_camera
+    global cap, g_current_camera
     # Release the current camera
     cap.release()
     
     # Switch between cameras
-    if current_camera == 0:
-        current_camera = 1
+    if g_current_camera == 0:
+        g_current_camera = 1
     else:
-        current_camera = 0
+        g_current_camera = 0
 
     # Reinitialize the capture with the new camera
-    cap = cv2.VideoCapture(current_camera)
+    cap = cv2.VideoCapture(g_current_camera)
 
 def toggle_pause():
     global pause
@@ -47,9 +47,13 @@ def handle_key():
     elif cv2.waitKey(1) & 0xFF == ord('p'):
         toggle_pause()
 
-
+cap = cv2.VideoCapture(0)
+g_current_camera = 0
 def gesture_recognition_loop(gesture_mappings,direction_mappings,motion_mappings,debug=True,frame=None,current_camera=0,color_mode="HSV",increased_ratio=0.25):
-    cap = cv2.VideoCapture(current_camera)
+    global cap, g_current_camera
+    
+    g_current_camera = current_camera
+    cap = cv2.VideoCapture(g_current_camera)
     print(gesture_mappings)
     while True:
         # Capture the frame twice a second
