@@ -140,17 +140,17 @@ def gesture_recognition_loop(gesture_mappings,direction_mappings,motion_mappings
             direction = detect_pointing_direction(frame, contour)       
             solidity = calcSolidity(contour)
             
-            if is_rock_on(contour,drawing,palm_center[0],palm_center[1], count_defects)==True and direction!="Left" and direction!="Right" and solidity<=0.6:
+            if is_rock_on(contour,drawing,palm_center[0],palm_center[1], count_defects)==True and direction!="oneFingerLeft" and direction!="oneFingerRight" and solidity<=0.6:
                 gesture = "rockOn"
             elif count_defects == 0:
                 if solidity > 0.6:  # Fist: High solidity (compact shape)
                     gesture = "fist"
                 else:  # hand with one finger pointing
                     gesture = "oneFinger"
-                # check direction
-                direction = detect_pointing_direction(frame, contour)
-                cv2.putText(frame, f"Direction: {direction}", (10, 100),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                    # check direction
+                    direction = detect_pointing_direction(frame, contour)
+                    cv2.putText(frame, f"Direction: {direction}", (10, 100),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             elif count_defects == 1:
                 gesture = "twoFinger"
             elif count_defects == 2:
