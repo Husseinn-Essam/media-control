@@ -48,7 +48,7 @@ def motion_detected():
 
     return False  # No significant motion
 
-def detect_motion_direction(prev_point, curr_point):
+def motion_detect_direction(prev_point, curr_point):
     print(f"Previous point: {prev_point}, Current point: {curr_point}")
     prev_x, prev_y = prev_point
     curr_x, curr_y = curr_point
@@ -75,7 +75,7 @@ def motion_track_points():
         # Was there a change in centroid of the hand that has surpassed the threshold?
         if motion_detected():
             # If yes, a motion has happened, lets see in which direction
-            motion_direction = detect_motion_direction(point_1, point_2)
+            motion_direction = motion_detect_direction(point_1, point_2)
             if motion_direction != "NO MOTION":
                 print(f"Motion detected: {motion_direction}")
                 motion_handle_buffer_reset()
