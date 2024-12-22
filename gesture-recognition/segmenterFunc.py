@@ -53,9 +53,13 @@ def segmenter(capturedFrame, mode='HSV',increase_ratio=0.25):
         if rows_roi > 0 and int(rows_roi * 0.27) > 0:
             roi[-int(rows_roi * 0.27):] = 0 
             
-        isolated_hand = isolate_hand(capturedFrame)
         hand = skin_thresholding(roi) # the mask of the bounded hand (will be used for gesture recognition)
-        isolated_hand_mask = skin_thresholding(isolated_hand)  # get the mask of the hand (will be used for centroid tracking)  
+        
+        # A completely dark frame except for the hand (still with skin color)
+        isolated_hand = isolate_hand(capturedFrame)
+        # Same as above but now in binary mask form
+        isolated_hand_mask = skin_thresholding(isolated_hand) 
+        
         return hand, roi, capturedFrame, isolated_hand_mask
     else:
         return thresh_frame, capturedFrame

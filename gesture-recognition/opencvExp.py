@@ -86,9 +86,14 @@ def gesture_recognition_loop(gesture_mappings,direction_mappings,motion_mappings
             thresh, roi,capturedFrame ,full_frame_segmented = results
         contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         
+        # Find the contours of the thresholded hand in the context of the full frame
+        # Since I need the actual locations as well for my motion tracking
+        # - Karim
         countoursFull , _ = cv2.findContours(full_frame_segmented, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        
         drawing = np.zeros(roi.shape, np.uint8)
         drawing2 = np.zeros(roi.shape, np.uint8)
+
         # Initialize gesture and motion variables
         gesture = "UNKNOWN"
         motion_detected = "UNKNOWN"
@@ -98,11 +103,16 @@ def gesture_recognition_loop(gesture_mappings,direction_mappings,motion_mappings
 
             contour = max(contours, key=lambda c: cv2.contourArea(c), default=0)
             contourFull = max(countoursFull, key=lambda c: cv2.contourArea(c), default=0)
+
             palmCenter = get_palm_center(contour)
             palmCenterFull = get_palm_center(contourFull)
+
+            # Add the centroid point of the hand (cx,cy) to a history 
+            motion_add_point_to_buffer((palmCenterFull[0], palmCenterFull[1]))
+
             cv2.circle(drawing, palmCenter, 5, (0, 0, 255), -1)
             cv2.circle(full_frame_segmented, palmCenterFull, 5, (0, 0, 255), -1)
-            motion_add_point_to_buffer((palmCenterFull[0], palmCenterFull[1]))
+
             hull = cv2.convexHull(contour)
             cv2.drawContours(drawing, [contour], -1, (0, 255, 0), 1)
             cv2.drawContours(drawing2, [contourFull], -1, (0, 255, 0), 1)
