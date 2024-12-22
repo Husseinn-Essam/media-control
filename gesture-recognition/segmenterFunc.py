@@ -5,6 +5,7 @@ from skimage.filters import gaussian, threshold_otsu
 from skimage.measure import label, regionprops
 import numpy as np
 from commonfunctions import *
+from math import ceil
 
 
 def isolate_hand(capturedFrame):
@@ -121,7 +122,6 @@ def segment_hand(thresh_frame, original_frame, increase_ratio=0.25):
     w = min(original_frame.shape[1] - x, w + int(increase_ratio * w))
     h = min(original_frame.shape[0] - y, h + int(increase_ratio * h))
     best_bounding_box = (x, y, w, h)
-    # print("Best Bounding Box: ", best_bounding_box)
     return best_bounding_box
 
 def adaptive_thresholding(image):
@@ -134,17 +134,24 @@ def adaptive_thresholding(image):
     
     return thresh_frame
 
-def skin_thresholding(image):
-    # Constants for finding range of skin
-    min_YCrCb = np.array([0, 133, 77], np.uint8)
-    max_YCrCb = np.array([255, 173, 127], np.uint8)
-    imageYCrCb = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
-    skinMask = cv2.inRange(imageYCrCb, min_YCrCb, max_YCrCb)
-    skinMask = cv2.GaussianBlur(skinMask, (5, 5), 0)
+def skin_thresholding(image, mode='Ycrcb'):
+    if mode.lower() == "hsv":
+        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        lower_vals = np.array([0, 50, 40], np.uint8)
+        upper_vals = np.array([20, 255, 255], np.uint8)
+        skinMask = cv2.inRange(hsv_image, lower_vals, upper_vals)
+    else:
+        # Constants for finding range of skin
+        min_YCrCb = np.array([0, 133, 77], np.uint8)
+        max_YCrCb = np.array([255, 173, 127], np.uint8)
+        imageYCrCb = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
+        skinMask = cv2.inRange(imageYCrCb, min_YCrCb, max_YCrCb)
+    # skinMask = cv2.GaussianBlur(skinMask, (5, 5), 0)
     skinMask = cv2.medianBlur(skinMask, 5)
+    skinMask = cv2.GaussianBlur(skinMask, (5, 5), 0)
     
     skinMask = cv2.morphologyEx(skinMask, cv2.MORPH_ERODE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)), iterations=2)
-    skinMask = cv2.morphologyEx(skinMask, cv2.MORPH_DILATE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)), iterations=2)
+    skinMask = cv2.morphologyEx(skinMask, cv2.MORPH_DILATE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)), iterations=3)
     skinMask = cv2.morphologyEx(skinMask, cv2.MORPH_ERODE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)), iterations=2)
 
     skinMask = cv2.morphologyEx(skinMask, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)), iterations=6)
@@ -153,8 +160,9 @@ def skin_thresholding(image):
 
 def preprocess_frame(capturedFrame, mode='HSV'):
     # capturedFrame = white_balance(capturedFrame)
+    #capturedFrame = normalize_lighting_clahe(capturedFrame)
+    capturedFrame = normalize_lighting_histogram(capturedFrame, mode= "YCrCb")
     capturedFrame = cv2.GaussianBlur(capturedFrame, (3, 3), 0)
-    capturedFrame = normalize_lighting_clahe(capturedFrame)
     capturedFrame = cv2.medianBlur(capturedFrame, 5)
     
     # Constants for finding range of skin color in YCrCb
@@ -192,23 +200,66 @@ def normalize_lighting_clahe(image):
     lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
 
     # Apply CLAHE to the L channel
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    lab[:, :, 0] = clahe.apply(lab[:, :, 0])
-
+    #clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    #lab[:, :, 0] = clahe.apply(lab[:, :, 0])
+    lab[:, :, 0] = manual_clahe(lab[:, :, 0], tileGridSize=8, clipLimit=2.0)
     # Convert back to BGR
     normalized_image = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
     return normalized_image
 
-def normalize_lighting_histogram(image):
-    # Convert to HSV
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+def manual_clahe(channel, tileGridSize=4, clipLimit=2.0):
 
-    # Equalize the histogram of the V channel
-    hsv[:, :, 2] = cv2.equalizeHist(hsv[:, :, 2])
+    height, width = channel.shape
+    tileHeight = ceil(height / tileGridSize)
+    tileWidth = ceil(width / tileGridSize)
+    output = np.zeros_like(channel, dtype=np.uint8)
 
-    # Convert back to BGR
-    normalized_image = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-    return normalized_image
+    for ty in range(tileGridSize):
+        for tx in range(tileGridSize):
+            y1, y2 = ty * tileHeight, min((ty + 1) * tileHeight, height)
+            x1, x2 = tx * tileWidth, min((tx + 1) * tileWidth, width)
+            subregion = channel[y1:y2, x1:x2]
+            hist, _ = np.histogram(subregion, bins=256, range=(0, 256))
+
+            limit = int(clipLimit * (subregion.size / 256.0))
+            excess = np.maximum(hist - limit, 0).sum()
+            hist = np.minimum(hist, limit)
+            spread = excess // 256
+            hist += spread
+            remainder = excess % 256
+            hist[:remainder] += 1
+
+            cdf = np.cumsum(hist).astype(np.float32)
+            cdf = (cdf / cdf[-1]) * 255
+            eq = np.interp(subregion.flatten(), np.arange(256), cdf).reshape(subregion.shape).astype(np.uint8)
+            output[y1:y2, x1:x2] = eq
+
+    return output
+
+def normalize_lighting_histogram(image, mode='YCrCb'):
+    if mode == 'YCrCb':
+        # Convert to YCrCb color space
+        ycrcb = cv2.cvtColor(image, cv2.COLOR_BGR2YCrCb)
+        # Equalize the Y channel
+        ycrcb[:, :, 0] = cv2.equalizeHist(ycrcb[:, :, 0])
+        # Convert back to BGR
+        return cv2.cvtColor(ycrcb, cv2.COLOR_YCrCb2BGR)
+
+    elif mode == 'Lab':
+        # Convert to LAB color space
+        lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+        # Equalize the L channel
+        lab[:, :, 0] = cv2.equalizeHist(lab[:, :, 0])
+        # Convert back to BGR
+        return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+    elif mode == 'HSV':
+        hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        hsv_img[:, :, 2] = cv2.equalizeHist(hsv_img[:, :, 2])
+        return cv2.cvtColor(hsv_img, cv2.COLOR_HSV2BGR)
+    else :# RGB
+        channels = cv2.split(image)
+        eq_channels = [cv2.equalizeHist(ch) for ch in channels]
+        return cv2.merge(eq_channels)
 
 def white_balance(image):
     # Split into channels
