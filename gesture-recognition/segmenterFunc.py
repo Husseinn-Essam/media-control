@@ -4,7 +4,6 @@ from skimage.color import rgb2gray
 from skimage.filters import gaussian, threshold_otsu
 from skimage.measure import label, regionprops
 import numpy as np
-from commonfunctions import *
 from math import ceil
 from customAlgos import calcSolidity, detect_pointing_direction, angle_between_points, convexity_defects
 
@@ -105,8 +104,14 @@ def segment_hand(thresh_frame, original_frame, increase_ratio=0.25, min_score_th
         direction = detect_pointing_direction(original_frame, contour)
         x, y, w, h = cv2.boundingRect(contour)
         aspect_ratio = w / h
-        if (solidity > 0.53 and count_defects == 0 and aspect_ratio < 0.69) and direction not in ["oneFingerRight", "oneFingerLeft", "oneFingerUp"]: # Down fist is most likely a face
-            print(f"REFUSED Aspect ratio: {aspect_ratio}, Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
+        
+        # Filter out faces and other non-hand shapes (rectangular faces)
+        if (solidity > 0.53 and count_defects == 0 and 0.4 < aspect_ratio < 0.69) and (direction not in ["oneFingerRight", "oneFingerLeft", "oneFingerUp"]):    
+            print(f"REFUSED1 Aspect ratio: {aspect_ratio}, Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
+            continue
+        # Filter out faces and other non-hand shapes (circular faces)
+        if (solidity > 0.6 and count_defects == 0 and aspect_ratio > 1) and (direction in ["oneFingerRight", "oneFingerLeft"]):
+            print(f"REFUSED2 Aspect ratio: {aspect_ratio}, Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
             continue
 
         # Check aspect ratio of bounding box
@@ -121,6 +126,7 @@ def segment_hand(thresh_frame, original_frame, increase_ratio=0.25, min_score_th
 
     # Step 3: Score bounding boxes
     bounding_boxes = []
+    scores_list = []
     for contour in filtered_contours:
         x, y, w, h = cv2.boundingRect(contour)
         cx, cy = x + w // 2, y + h // 2  # Center of the bounding box
@@ -153,7 +159,7 @@ def segment_hand(thresh_frame, original_frame, increase_ratio=0.25, min_score_th
         frame_center_x, frame_center_y = original_frame.shape[1] // 2, original_frame.shape[0] // 2
         distance_to_center = ((cx - frame_center_x) ** 2 + (cy - frame_center_y) ** 2) ** 0.5
 
-        # Scoring system
+       # Scoring system
         size_score = w * h / frame_area
         aspect_ratio_score = 1 - abs(aspect_ratio - 1)  # Closer to 1 is better
         solidity_score = solidity  # Higher solidity preferred
@@ -161,22 +167,27 @@ def segment_hand(thresh_frame, original_frame, increase_ratio=0.25, min_score_th
         defect_score = defect_density * 10  # Boost based on defect density
         proximity_score = 1 / (1 + distance_to_center)  # Closer to center is better
 
-        # Final score
-        final_score = (0.3 * size_score +
-                       0.25 * aspect_ratio_score +
-                       0.2 * solidity_score +
-                       0.15 * defect_score - 
-                       0.05 * circularity_penalty +
-                       0.05 * proximity_score)
+        # Final score with reduced size weight
+        final_score = (0.2 * size_score +           # Reduced weight for size
+                    0.3 * aspect_ratio_score +   # Increased weight for aspect ratio
+                    0.3 * solidity_score +       # High weight for solidity
+                    0.15 * defect_score -        # Moderate weight for defects
+                    0.05 * circularity_penalty + # Slight penalty for circularity
+                    0.05 * proximity_score)      # Slight weight for proximity
+
 
         # Only add bounding box if final score is above threshold
         if final_score >= min_score_threshold:
             bounding_boxes.append((final_score, (x, y, w, h), contour))
+            scores_list.append([final_score, size_score, aspect_ratio_score, solidity_score, circularity_penalty, defect_score, proximity_score])
 
     # Step 4: Select the best bounding box
     if bounding_boxes:
         _, best_bounding_box, _ = max(bounding_boxes, key=lambda b: b[0])
-
+        best_scores = scores_list[bounding_boxes.index(max(bounding_boxes, key=lambda b: b[0]))]
+        second_best_scores = scores_list[bounding_boxes.index(sorted(bounding_boxes, key=lambda b: b[0])[-1])]
+        print(f"BEST SCORES. final_score: {best_scores[0]}, size_score: {best_scores[1]}, aspect_ratio_score: {best_scores[2]}, solidity_score: {best_scores[3]}, circularity_penalty: {best_scores[4]}, defect_score: {best_scores[5]}, proximity_score: {best_scores[6]}")
+        print(f"SECOND BEST SCORES. final_score: {second_best_scores[0]}, size_score: {second_best_scores[1]}, aspect_ratio_score: {second_best_scores[2]}, solidity_score: {second_best_scores[3]}, circularity_penalty: {second_best_scores[4]}, defect_score: {second_best_scores[5]}, proximity_score: {second_best_scores[6]}")
         # Increase the bounding box size, Default: by 25%
         x, y, w, h = best_bounding_box
         x = max(0, x - int(increase_ratio / 2 * w))
