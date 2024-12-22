@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import math
 from segmenterFunc import segmenter
-from customAlgos import convexity_defects, angle_between_points, get_palm_center, is_rock_on, detect_pointing_direction, calcSolidity, filterDefects
+from customAlgos import convexity_defects, angle_between_points, get_palm_center, is_rock_on, detect_pointing_direction, calcSolidity, filterDefects, convex_hull
 from motionFunc import motion_add_point_to_buffer, motion_handle_buffer_reset, motion_track_points
 from systemActions import perform_action
 # debug related stuff
@@ -102,15 +102,17 @@ def gesture_recognition_loop(gesture_mappings,direction_mappings,motion_mappings
             palmCenterFull = get_palm_center(contourFull)
             cv2.circle(drawing, palmCenter, 5, (0, 0, 255), -1)
             cv2.circle(full_frame_segmented, palmCenterFull, 5, (0, 0, 255), -1)
+            
             motion_add_point_to_buffer((palmCenterFull[0], palmCenterFull[1]))
-            hull = cv2.convexHull(contour)
+            
+            hull = convex_hull(contour) 
             cv2.drawContours(drawing, [contour], -1, (0, 255, 0), 1)
             cv2.drawContours(drawing2, [contourFull], -1, (0, 255, 0), 1)
             cv2.drawContours(drawing, [hull], -1, (0, 0, 255), 1)
     
-            hull_indices = cv2.convexHull(contour, returnPoints=False).flatten()
+            # hull_indices = cv2.convexHull(contour, returnPoints=False).flatten()
 
-            defects = convexity_defects(contour[:, 0, :], hull_indices)
+            defects = convexity_defects(contour[:, 0, :], hull)
             
             
             # Filter defects with approximately 90 degrees

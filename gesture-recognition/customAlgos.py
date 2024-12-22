@@ -2,45 +2,47 @@ import cv2
 import numpy as np
 import math
 
-def convexity_defects(points, hull):
+import numpy as np
+
+def convexity_defects(points, hull_points):
     try:
         points = np.array(points, dtype=np.int32)
-        hull = np.array(hull, dtype=np.int32)
-        ## we dont have a closed shape so we can not compute convexity defects
+        hull_points = np.array(hull_points, dtype=np.int32)
+        
+        # this will find the indices of the hull points in the original points array
+        hull_indices = [np.where((points == p).all(axis=1))[0][0] for p in hull_points]
+
+        # We don't have a closed shape so we cannot compute convexity defects
         npoints = len(points)
         if npoints <= 3:
-            print("Not enough points to form defects.")
             return []
 
-        hpoints = len(hull)
+        hpoints = len(hull_indices)
         if hpoints < 3:
-            print("Not enough hull points to form defects.")
             return []
-
-        # print(f"Number of points: {npoints}, Number of hull points: {hpoints}")
 
         defects = []
         if hpoints < 3:
-            print("Hull has less than 3 points, contour is always convex.")
             return defects
-        ## check hull orientation (clockwise or anti) to determine the starting point
-        rev_orientation = ((hull[1] > hull[0]) + (hull[2] > hull[1]) + (hull[0] > hull[2])) != 2
 
-        hcurr = hull[0] if rev_orientation else hull[-1]
+        # Check hull orientation (clockwise or anti-clockwise) to determine the starting point
+        rev_orientation = ((hull_indices[1] > hull_indices[0]) + (hull_indices[2] > hull_indices[1]) + (hull_indices[0] > hull_indices[2])) != 2
+
+        hcurr = hull_indices[0] if rev_orientation else hull_indices[-1]
 
         for i in range(hpoints):
-            hnext = hull[hpoints - i - 1] if rev_orientation else hull[i]
+            hnext = hull_indices[hpoints - i - 1] if rev_orientation else hull_indices[i]
             
-            # notice that: the hull elements are 0-based indices of the convex hull points 
+            # Notice that: the hull elements are 0-based indices of the convex hull points 
             # in the contour array (since the set of convex hull points is a subset of the original contour point set).
             pt0 = points[hcurr]
             pt1 = points[hnext]
             dx0 = pt1[0] - pt0[0]
             dy0 = pt1[1] - pt0[1]
             
-            ## 1) in case the edge length is 0 (dx = 0 and dy = 0) the scale will be 0 as the distance is 0
-            ## 2) othewise the scale will be 1/edge_length for normalization 
-            ##    as we dont want the edge length to affect the defect depth calculation
+            # 1) In case the edge length is 0 (dx = 0 and dy = 0) the scale will be 0 as the distance is 0
+            # 2) Otherwise the scale will be 1/edge_length for normalization 
+            #    as we don't want the edge length to affect the defect depth calculation
             scale = 0. if dx0 == 0 and dy0 == 0 else 1. / np.sqrt(dx0 * dx0 + dy0 * dy0)
 
             defect_deepest_point = -1
@@ -73,8 +75,8 @@ def convexity_defects(points, hull):
         return defects
     except Exception as e:
         print(f"Error in convexity_defects: {e}")
-        print(f"Points: {points}")
-        print(f"Hull: {hull}")
+        # print(f"Points: {points}")
+        # print(f"Hull Points: {hull_points}")
         return []
 
 def angle_between_points(pt1, pt2, pt0):
@@ -84,6 +86,45 @@ def angle_between_points(pt1, pt2, pt0):
     dy2 = pt2[1] - pt0[1]
     angle = math.atan2(dy1, dx1) - math.atan2(dy2, dx2)
     return abs(angle * 180.0 / math.pi)
+
+import numpy as np
+
+def convex_hull(points, clockwise=False, returnPoints=True):
+    points = np.asarray(points)
+    n = len(points)
+    if n == 0:
+        return np.array([])
+
+    # Sort points lexicographically (tuples compare lexicographically).
+    points = sorted(points.tolist())
+
+    # Build the lower hull
+    lower = []
+    for p in points:
+        while len(lower) >= 2 and np.cross(np.subtract(lower[-1], lower[-2]), np.subtract(p, lower[-1])) <= 0:
+            lower.pop()
+        lower.append(tuple(p))
+
+    # Build the upper hull
+    upper = []
+    for p in reversed(points):
+        while len(upper) >= 2 and np.cross(np.subtract(upper[-1], upper[-2]), np.subtract(p, upper[-1])) <= 0:
+            upper.pop()
+        upper.append(tuple(p))
+
+    # Concatenate lower and upper hull to get the full hull
+    full_hull = lower[:-1] + upper[:-1]
+
+    if not returnPoints:
+        # Convert points back to numpy arrays for indexing
+        points = np.asarray(points)
+        full_hull = [np.array(p) for p in full_hull]
+        # Return indices of the hull points
+        hull_indices = [np.where((points == p).all(axis=1))[0][0] for p in full_hull]
+        return np.array(hull_indices)
+    else:
+        # Return the hull points
+        return np.array(full_hull)
 
 
 def detect_pointing_direction(frame, contour):
@@ -237,3 +278,5 @@ def filterDefects( defects, contour):
             return filtered_defects,count_defects 
         except Exception as e:
             print(e)
+
+
