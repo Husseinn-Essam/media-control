@@ -88,7 +88,7 @@ def angle_between_points(pt1, pt2, pt0):
 
 def detect_pointing_direction(frame, contour):
             """
-                Detect the pointing direction based on the palm center and defects.
+                Detect the pointing direction based on the palm center.
                 Args:
                     frame: The frame to draw on(not the thresholded).
                     contour: The contour of the hand.
