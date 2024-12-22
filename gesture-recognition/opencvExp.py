@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import math
 from segmenterFunc import segmenter
-from customAlgos import convexity_defects, angle_between_points, get_palm_center, is_rock_on, detect_pointing_direction, calcSolidity
+from customAlgos import convexity_defects, angle_between_points, get_palm_center, is_rock_on, detect_pointing_direction, calcSolidity, filterDefects
 from motionFunc import motion_add_point_to_buffer, motion_handle_buffer_reset, motion_track_points
 from systemActions import perform_action
 # debug related stuff
@@ -112,20 +112,10 @@ def gesture_recognition_loop(gesture_mappings,direction_mappings,motion_mappings
 
             defects = convexity_defects(contour[:, 0, :], hull_indices)
             
-            count_defects = 0
             
             # Filter defects with approximately 90 degrees
-            filtered_defects = []
-            for defect in defects:
-                start_idx, end_idx, far_idx, depth = defect
-                start = tuple(contour[start_idx][0])
-                end = tuple(contour[end_idx][0])
-                far = tuple(contour[far_idx][0])
-                angle = angle_between_points(start, end, far)
-                if  angle < 90:  # Allow a small margin around 90 degrees
-                    count_defects += 1
-                    filtered_defects.append(defect)
-
+            filtered_defects, count_defects = filterDefects( defects, contour)
+            
             # Draw filtered convexity defects
             for defect in filtered_defects:
                 start_idx, end_idx, far_idx, depth = defect
@@ -166,7 +156,7 @@ def gesture_recognition_loop(gesture_mappings,direction_mappings,motion_mappings
             if motion_detected != None:
                 motion_last_detected = motion_detected
             
-            perform_action(gesture,gesture_mappings,direction_mappings,motion_mappings,direction,motion_detected)
+            # perform_action(gesture,gesture_mappings,direction_mappings,motion_mappings,direction,motion_detected)
             
             cv2.putText(frame, f"Gesture: {gesture}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             cv2.putText(frame, f"Detected Motion: {motion_detected}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
@@ -193,12 +183,13 @@ def gesture_recognition_loop(gesture_mappings,direction_mappings,motion_mappings
     cv2.destroyAllWindows()
 
 
-# gesture_recognition_loop(debug=True,gesture_mappings={
-#     "ONE": "unmapped",
-#     "TWO": "mute",
-#     "THREE": "volume_up",
-#     "FOUR": "volume_down",
-#     "FIVE": "play_pause",
-#     "ROCK ON": "mute",
-#     "FIST": "unmapped",
-# })
+gesture_recognition_loop(debug=True,gesture_mappings={
+    "ONE": "unmapped",
+    "TWO": "mute",
+    "THREE": "volume_up",
+    "FOUR": "volume_down",
+    "FIVE": "play_pause",
+    "ROCK ON": "mute",
+    "FIST": "unmapped",
+
+} ,direction_mappings=None,motion_mappings=None)

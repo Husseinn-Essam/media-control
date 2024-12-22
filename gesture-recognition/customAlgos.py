@@ -218,3 +218,22 @@ def calcSolidity(contour):
         rect_area = w * h
         contour_area = cv2.contourArea(contour)
         return contour_area / rect_area if rect_area != 0 else 0
+
+
+def filterDefects( defects, contour):
+        try:
+            filtered_defects= []
+            count_defects = 0
+            for defect in defects:
+                start_idx, end_idx, far_idx, depth = defect
+                start = tuple(contour[start_idx][0])
+                end = tuple(contour[end_idx][0])
+                far = tuple(contour[far_idx][0])
+                angle = angle_between_points(start, end, far)
+                if  angle < 90:  # Allow a small margin around 90 degrees
+                    count_defects += 1
+                    filtered_defects.append(defect)
+            
+            return filtered_defects,count_defects 
+        except Exception as e:
+            print(e)
