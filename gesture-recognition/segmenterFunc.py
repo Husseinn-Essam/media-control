@@ -6,6 +6,7 @@ from skimage.measure import label, regionprops
 import numpy as np
 from commonfunctions import *
 from math import ceil
+from customAlgos import calcSolidity, detect_pointing_direction, angle_between_points, convexity_defects
 
 
 def isolate_hand(capturedFrame):
@@ -40,8 +41,6 @@ def isolate_hand(capturedFrame):
         return np.zeros_like(capturedFrame)
 
 
-
-
 def segmenter(capturedFrame, mode='HSV',increase_ratio=0.25):
     # preprocess the frame
     capturedFrame, thresh_frame = preprocess_frame(capturedFrame, mode)
@@ -49,6 +48,12 @@ def segmenter(capturedFrame, mode='HSV',increase_ratio=0.25):
     hand_segment = segment_hand(thresh_frame, capturedFrame, increase_ratio)
     if hand_segment is not None and len(hand_segment) == 4:
         roi = capturedFrame[hand_segment[1]:hand_segment[1] + hand_segment[3], hand_segment[0]:hand_segment[0] + hand_segment[2]]
+        
+        # Set the bottom rows to 0
+        rows_roi, cols_roi, _ = roi.shape
+        if rows_roi > 0 and int(rows_roi * 0.27) > 0:
+            roi[-int(rows_roi * 0.27):] = 0 
+            
         isolated_hand = isolate_hand(capturedFrame)
         hand = skin_thresholding(roi) # the mask of the bounded hand (will be used for gesture recognition)
         isolated_hand_mask = skin_thresholding(isolated_hand)  # get the mask of the hand (will be used for centroid tracking)  
@@ -56,7 +61,8 @@ def segmenter(capturedFrame, mode='HSV',increase_ratio=0.25):
     else:
         return thresh_frame, capturedFrame
 
-def segment_hand(thresh_frame, original_frame, increase_ratio=0.25):
+
+def segment_hand(thresh_frame, original_frame, increase_ratio=0.25, min_score_threshold=0.25):
     # Convert to 8-bit integer if needed
     thresh_frame = thresh_frame.astype(np.uint8)
 
@@ -74,13 +80,40 @@ def segment_hand(thresh_frame, original_frame, increase_ratio=0.25):
         area = cv2.contourArea(contour)
         if area < 0.01 * frame_area or area > 0.8 * frame_area:
             continue  # Ignore contours that are too small or too large
+        
+        # calculate defects
+        hull_indices = cv2.convexHull(contour, returnPoints=False).flatten()
 
-        # Check aspect ratio of bounding box
+        defects = convexity_defects(contour[:, 0, :], hull_indices)
+        
+        count_defects = 0
+        
+        # Filter defects with approximately 90 degrees
+        filtered_defects = []
+        for defect in defects:
+            start_idx, end_idx, far_idx, depth = defect
+            start = tuple(contour[start_idx][0])
+            end = tuple(contour[end_idx][0])
+            far = tuple(contour[far_idx][0])
+            angle = angle_between_points(start, end, far)
+            if  angle < 90:  # Allow a small margin around 90 degrees
+                count_defects += 1
+                filtered_defects.append(defect)
+        
+        # calculate solidity and direction
+        solidity = calcSolidity(contour)
+        direction = detect_pointing_direction(original_frame, contour)
         x, y, w, h = cv2.boundingRect(contour)
         aspect_ratio = w / h
-        # Draw the bounding rectangle on the image
-        # cv2.rectangle(original_frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-        if 0.3 < aspect_ratio < 3.0:  # Acceptable aspect ratio range for a hand
+        if solidity > 0.56 and count_defects == 0 and aspect_ratio < 0.65: # Down fist is most likely a face
+            print(f"Aspect ratio: {aspect_ratio}")
+            continue
+
+        # Check aspect ratio of bounding box
+        print(f"Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
+        x, y, w, h = cv2.boundingRect(contour)
+        aspect_ratio = w / h
+        if 0.3 < aspect_ratio < 1.5:  # Acceptable aspect ratio range for a hand
             filtered_contours.append(contour)
 
     if not filtered_contours:
@@ -92,37 +125,70 @@ def segment_hand(thresh_frame, original_frame, increase_ratio=0.25):
         x, y, w, h = cv2.boundingRect(contour)
         cx, cy = x + w // 2, y + h // 2  # Center of the bounding box
 
+        # Calculate solidity
+        hull = cv2.convexHull(contour)
+        hull_area = cv2.contourArea(hull)
+        if hull_area > 0:
+            solidity = cv2.contourArea(contour) / hull_area
+        else:
+            solidity = 0
+
+        # Calculate circularity
+        perimeter = cv2.arcLength(contour, True)
+        circularity = (4 * np.pi * cv2.contourArea(contour)) / (perimeter ** 2) if perimeter > 0 else 0
+
+        # Calculate convexity defects
+        hull_indices = cv2.convexHull(contour, returnPoints=False)
+        if len(hull_indices) > 3:  # Ensure enough points to compute defects
+            defects = cv2.convexityDefects(contour, hull_indices)
+            if defects is not None:
+                defect_count = defects.shape[0]
+                defect_density = defect_count / perimeter if perimeter > 0 else 0
+            else:
+                defect_density = 0
+        else:
+            defect_density = 0
 
         # Calculate proximity to frame center
         frame_center_x, frame_center_y = original_frame.shape[1] // 2, original_frame.shape[0] // 2
         distance_to_center = ((cx - frame_center_x) ** 2 + (cy - frame_center_y) ** 2) ** 0.5
 
-        # Scoring system (adjust weights as needed)
+        # Scoring system
         size_score = w * h / frame_area
         aspect_ratio_score = 1 - abs(aspect_ratio - 1)  # Closer to 1 is better
-
+        solidity_score = solidity  # Higher solidity preferred
+        circularity_penalty = max(0, 1 - circularity)  # Penalize overly circular shapes
+        defect_score = defect_density * 10  # Boost based on defect density
         proximity_score = 1 / (1 + distance_to_center)  # Closer to center is better
 
         # Final score
-        final_score = (0.4 * size_score +
-                       0.3 * aspect_ratio_score +
-                       0.1 * proximity_score)
-        
-        bounding_boxes.append((final_score, (x, y, w, h), contour))
+        final_score = (0.3 * size_score +
+                       0.25 * aspect_ratio_score +
+                       0.2 * solidity_score +
+                       0.15 * defect_score - 
+                       0.05 * circularity_penalty +
+                       0.05 * proximity_score)
+
+        # Only add bounding box if final score is above threshold
+        if final_score >= min_score_threshold:
+            bounding_boxes.append((final_score, (x, y, w, h), contour))
 
     # Step 4: Select the best bounding box
-    _,best_bounding_box, bestcontour = max(bounding_boxes, key=lambda b: b[0])
+    if bounding_boxes:
+        _, best_bounding_box, _ = max(bounding_boxes, key=lambda b: b[0])
 
-    # Draw the best bounding box
-    cv2.rectangle(original_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-    # Increase the bounding box size , Default: by 25%
-    x, y, w, h = best_bounding_box
-    x = max(0, x - int(increase_ratio / 2 * w))
-    y = max(0, y - int(increase_ratio / 2 * h))
-    w = min(original_frame.shape[1] - x, w + int(increase_ratio * w))
-    h = min(original_frame.shape[0] - y, h + int(increase_ratio * h))
-    best_bounding_box = (x, y, w, h)
-    return best_bounding_box
+        # Increase the bounding box size, Default: by 25%
+        x, y, w, h = best_bounding_box
+        x = max(0, x - int(increase_ratio / 2 * w))
+        y = max(0, y - int(increase_ratio / 2 * h))
+        w = min(original_frame.shape[1] - x, w + int(increase_ratio * w))
+        h = min(original_frame.shape[0] - y, h + int(increase_ratio * h))
+
+        return (x, y, w, h)
+    else:
+        return None  # No valid hand found above the threshold
+    
+
 
 def adaptive_thresholding(image):
     gray_frame = rgb2gray(image)
