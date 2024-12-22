@@ -62,7 +62,7 @@ def segmenter(capturedFrame, mode='HSV',increase_ratio=0.25):
         return thresh_frame, capturedFrame
 
 
-def segment_hand(thresh_frame, original_frame, increase_ratio=0.25, min_score_threshold=0.25):
+def segment_hand(thresh_frame, original_frame, increase_ratio=0.25, min_score_threshold=0):
     # Convert to 8-bit integer if needed
     thresh_frame = thresh_frame.astype(np.uint8)
 
@@ -105,15 +105,15 @@ def segment_hand(thresh_frame, original_frame, increase_ratio=0.25, min_score_th
         direction = detect_pointing_direction(original_frame, contour)
         x, y, w, h = cv2.boundingRect(contour)
         aspect_ratio = w / h
-        if solidity > 0.56 and count_defects == 0 and aspect_ratio < 0.65: # Down fist is most likely a face
-            print(f"Aspect ratio: {aspect_ratio}")
+        if (solidity > 0.53 and count_defects == 0 and aspect_ratio < 0.69) and direction not in ["oneFingerRight", "oneFingerLeft", "oneFingerUp"]: # Down fist is most likely a face
+            print(f"REFUSED Aspect ratio: {aspect_ratio}, Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
             continue
 
         # Check aspect ratio of bounding box
-        print(f"Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
+        print(f"ACCEPTED Aspect ratio: {aspect_ratio}, Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
         x, y, w, h = cv2.boundingRect(contour)
         aspect_ratio = w / h
-        if 0.3 < aspect_ratio < 1.5:  # Acceptable aspect ratio range for a hand
+        if 0.3 < aspect_ratio < 3:  # Acceptable aspect ratio range for a hand
             filtered_contours.append(contour)
 
     if not filtered_contours:
