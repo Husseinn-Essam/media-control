@@ -48,9 +48,9 @@ def handle_key():
         toggle_pause()
 
 
-def gesture_recognition_loop(gesture_mappings,debug=True,frame=None,current_camera=0,color_mode="HSV",increased_ratio=0.25):
+def gesture_recognition_loop(gesture_mappings,direction_mappings,motion_mappings,debug=True,frame=None,current_camera=0,color_mode="HSV",increased_ratio=0.25):
     cap = cv2.VideoCapture(current_camera)
-
+    print(gesture_mappings)
     while True:
         # Capture the frame twice a second
 
@@ -141,31 +141,33 @@ def gesture_recognition_loop(gesture_mappings,debug=True,frame=None,current_came
             solidity = calcSolidity(contour)
             
             if is_rock_on(contour,drawing,palm_center[0],palm_center[1], count_defects)==True and direction!="Left" and direction!="Right" and solidity<=0.6:
-                gesture = "ROCK ON"
+                gesture = "rockOn"
             elif count_defects == 0:
                 if solidity > 0.6:  # Fist: High solidity (compact shape)
-                    gesture = "FIST"
+                    gesture = "fist"
                 else:  # hand with one finger pointing
-                    gesture = "ONE"
+                    gesture = "oneFinger"
                 # check direction
                 direction = detect_pointing_direction(frame, contour)
                 cv2.putText(frame, f"Direction: {direction}", (10, 100),
                                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             elif count_defects == 1:
-                gesture = "TWO"
+                gesture = "twoFinger"
             elif count_defects == 2:
-                gesture = "THREE"
+                gesture = "threeFinger"
             elif count_defects == 3:
-                gesture = "FOUR"
+                gesture = "fourFinger"
             elif count_defects == 4:
-                gesture = "FIVE"
+                gesture = "fiveFinger"
             else:
                 gesture = "UNKNOWN"
             
             motion_detected = motion_track_points()
             if motion_detected != None:
                 motion_last_detected = motion_detected
-            perform_action(gesture,gesture_mappings)
+            
+            perform_action(gesture,gesture_mappings,direction_mappings,motion_mappings,direction,motion_detected)
+            
             cv2.putText(frame, f"Gesture: {gesture}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             cv2.putText(frame, f"Detected Motion: {motion_detected}", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
             cv2.putText(frame, f"Last Detected Motion: {motion_last_detected}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
@@ -191,12 +193,17 @@ def gesture_recognition_loop(gesture_mappings,debug=True,frame=None,current_came
     cv2.destroyAllWindows()
 
 
-gesture_recognition_loop(debug=True,gesture_mappings={
-    "ONE": "unmapped",
-    "TWO": "mute",
-    "THREE": "volume_up",
-    "FOUR": "volume_down",
-    "FIVE": "play_pause",
-    "ROCK ON": "mute",
-    "FIST": "unmapped",
-})
+# gesture_recognition_loop(debug=True,gesture_mappings={
+#     "ONE": "unmapped",
+#     "TWO": "mute",
+#     "THREE": "volume_up",
+#     "FOUR": "volume_down",
+#     "FIVE": "play_pause",
+#     "ROCK ON": "mute",
+#     "FIST": "unmapped",
+# })
+# 'fist': 'unmapped', 'fiveFinger': 'unmapped', 'fourFinger': 'unmapped'
+# , 'oneFinger': 'unmapped'
+# , 'rockOn': 'unmapped'
+# , 'threeFinger': 'unmapped'
+# , 'twoFinger': 'action2'}

@@ -128,14 +128,14 @@ def detect_pointing_direction(frame, contour):
                     direction = ""
                     if abs(pointing_vector[0]) > abs(pointing_vector[1]):
                         if pointing_vector[0] > 0:
-                            direction = "Right"
+                            direction = "oneFingerRight"
                         else:
-                            direction = "Left"
+                            direction = "oneFingerLeft"
                     else:
                         if pointing_vector[1] > 0:
-                            direction = "Down"
+                            direction = "oneFingerDown"
                         else:
-                            direction = "Up"
+                            direction = "oneFingerUp"
                     return direction
                    
 

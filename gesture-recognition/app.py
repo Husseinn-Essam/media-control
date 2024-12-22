@@ -48,10 +48,10 @@ mappings = load_json_file(GESTURE_MAPPINGS_FILE, {
         "oneFingerRight": "unmapped",
     },
     "motionMappings": {
-        "moveHandUp": "unmapped",
-        "moveHandDown": "unmapped",
-        "moveHandLeft": "unmapped",
-        "moveHandRight": "unmapped",
+        "UP": "unmapped",
+        "DOWN": "unmapped",
+        "LEFT": "unmapped",
+        "RIGHT": "unmapped",
     }
 })
 
@@ -63,7 +63,8 @@ motion_mappings = {"motionMappings": mappings.get("motionMappings", {})}
 def recognize_gesture():
     """Process the current frame for gesture recognition."""
     try:
-        gesture_recognition_loop(debug=True, frame=None, current_camera=settings["camera"], color_mode=settings["color_mode"], increased_ratio=settings["bounded_ratio"])
+        print(gesture_mappings)
+        gesture_recognition_loop(debug=True, frame=None, current_camera=settings["camera"], color_mode=settings["color_mode"], increased_ratio=settings["bounded_ratio"],gesture_mappings=gesture_mappings['gestureMappings'],direction_mappings=direction_mappings['directionMappings'],motion_mappings=motion_mappings['motionMappings'])
     except Exception as e:
         print(f"Error processing gesture: {e}")
         return jsonify({"error": "Internal server error"}), 500
@@ -85,7 +86,7 @@ def update_system_settings():
         if 'bounded_ratio' in data:
             settings["bounded_ratio"] = data['bounded_ratio']
 
-        print(f"Updated settings: Camera: {settings["camera"]}, Color Mode: {settings["color_mode"]}, Bounded Ratio: {settings["bounded_ratio"]}")
+        # print(f"Updated settings: Camera: {settings["camera"]}, Color Mode: {settings["color_mode"]}, Bounded Ratio: {settings["bounded_ratio"]}")
 
         
         # Save the updated settings to the configuration file
