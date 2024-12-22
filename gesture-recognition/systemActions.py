@@ -1,6 +1,5 @@
 import pyautogui
 import time
-
 last_action_time = 0
 action_cooldown = 1 
 
@@ -16,7 +15,7 @@ def perform_action(gesture, gesture_mappings, direction_mappings, motion_mapping
             print(f"Movement: {movement}")
             print(f"Movement Action: {movement_action}")
 
-            if movement_action == "fullScreen":
+            if movement_action == "fullscreen":
                 pyautogui.press('f')
             elif movement_action == "close":
                 pyautogui.hotkey('ctrl', 'q')

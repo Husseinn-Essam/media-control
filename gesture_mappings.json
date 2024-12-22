@@ -1,0 +1,23 @@
+{
+    "gestureMappings": {
+        "fist": "unmapped",
+        "fiveFinger": "speed_down",
+        "fourFinger": "speed_up",
+        "oneFinger": "unmapped",
+        "rockOn": "fast_forward",
+        "threeFinger": "rewind",
+        "twoFinger": "play_pause"
+    },
+    "directionMappings": {
+        "oneFingerDown": "action3",
+        "oneFingerLeft": "volume_up",
+        "oneFingerRight": "volume_down",
+        "oneFingerUp": "unmapped"
+    },
+    "motionMappings": {
+        "DOWN": "close",
+        "LEFT": "changeAudioDevice",
+        "RIGHT": "showTime",
+        "UP": "fullscreen"
+    }
+}
