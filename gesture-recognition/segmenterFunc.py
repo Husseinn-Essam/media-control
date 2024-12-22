@@ -8,19 +8,7 @@ from math import ceil
 from customAlgos import calcSolidity, detect_pointing_direction, angle_between_points, convexity_defects
 
 
-def isolate_hand(capturedFrame):
-    """
-    Isolates the hand in the input frame, making the rest of the frame black.
-    
-    Args:
-        capturedFrame (numpy.ndarray): Input frame.
-    
-    Returns:
-        numpy.ndarray: Output frame with only the hand visible, the rest black.
-    """
-    # apply preprocessing on frame
-    preprocessed_frame, thresh_frame = preprocess_frame(capturedFrame)
-    hand_segment = segment_hand(thresh_frame, preprocessed_frame)
+def isolate_hand(capturedFrame, hand_segment):
 
     if hand_segment is not None and len(hand_segment) == 4:
         # Get the bounding box of the hand
@@ -29,12 +17,11 @@ def isolate_hand(capturedFrame):
         black_frame = np.zeros_like(capturedFrame)
         # we get the ROI (cropped image where hand is located)
         roi = capturedFrame[y:y + h, x:x + w]
-        # apply thresholding to get the mask of the hand
+        # apply thresholding to get the mask of the hand in the roi
         hand_mask = skin_thresholding(roi)
         # Place the isolated hand on the black frame which will have the same demensions as the input frame
         black_frame[y:y + h, x:x + w] = cv2.bitwise_and(roi, roi, mask=hand_mask)
         return black_frame
-
     else:
         # If no hand is detected, return a completely black frame
         return np.zeros_like(capturedFrame)
@@ -49,14 +36,14 @@ def segmenter(capturedFrame, mode='HSV',increase_ratio=0.25):
         roi = capturedFrame[hand_segment[1]:hand_segment[1] + hand_segment[3], hand_segment[0]:hand_segment[0] + hand_segment[2]]
         
         # Set the bottom rows to 0
-        rows_roi, cols_roi, _ = roi.shape
-        if rows_roi > 0 and int(rows_roi * 0.27) > 0:
-            roi[-int(rows_roi * 0.27):] = 0 
+        # rows_roi, cols_roi, _ = roi.shape
+        # if rows_roi > 0 and int(rows_roi * 0.27) > 0:
+        #     roi[-int(rows_roi * 0.27):] = 0 
             
         hand = skin_thresholding(roi) # the mask of the bounded hand (will be used for gesture recognition)
         
         # A completely dark frame except for the hand (still with skin color)
-        isolated_hand = isolate_hand(capturedFrame)
+        isolated_hand = isolate_hand(capturedFrame, hand_segment)
         # Same as above but now in binary mask form
         isolated_hand_mask = skin_thresholding(isolated_hand) 
         
