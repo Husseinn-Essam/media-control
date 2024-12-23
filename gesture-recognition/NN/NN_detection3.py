@@ -8,12 +8,18 @@ def translate_number_to_string(number):
     mapping = {
         9: "FIVE",
         13: "FIVE",
+        5: "FOUR",
+        15: "FOUR",
         10: "TWO",
+        11: "TWO",
+        17: "TWO",
         6: "ONE",
         4: "FIST",
-        7: "One Finger Left",
+        7: "THREE",
         2: "One Finger Right",
-        1: "One Finger Up",
+        1: "One Finger Right",
+        8: "One Finger Up",
+        0: "One Finger Down",
         3: "One Finger Down",
         30: "One Finger Down",
         12: "ROCK ON"
@@ -88,16 +94,16 @@ while cap.isOpened():
                 2,
                 cv2.LINE_AA,
             )
-            cv2.putText(
-                frame,
-                text,
-                (10, 60),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (0, 255, 0),
-                2,
-                cv2.LINE_AA,
-            )
+            # cv2.putText(
+            #     frame,
+            #     text,
+            #     (10, 60),
+            #     cv2.FONT_HERSHEY_SIMPLEX,
+            #     1,
+            #     (0, 255, 0),
+            #     2,
+            #     cv2.LINE_AA,
+            # )
 
             # Draw the hand landmarks on the frame
             for landmark in hand_landmarks.landmark:
