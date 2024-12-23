@@ -50,8 +50,8 @@ def segmenter(capturedFrame, mode='HSV',increase_ratio=0.25):
         
         # Set the bottom rows to 0
         rows_roi, cols_roi, _ = roi.shape
-        if rows_roi > 0 and int(rows_roi * 0.27) > 0:
-            roi[-int(rows_roi * 0.27):] = 0 
+        if rows_roi > 0 and int(rows_roi * 0.2) > 0:
+            roi[-int(rows_roi * 0.2):] = 0 
             
         isolated_hand = isolate_hand(capturedFrame)
         hand = skin_thresholding(roi) # the mask of the bounded hand (will be used for gesture recognition)
@@ -106,9 +106,9 @@ def segment_hand(thresh_frame, original_frame, increase_ratio=0.25, min_score_th
         aspect_ratio = w / h
         
         # # Filter out faces and other non-hand shapes (rectangular faces)
-        # if (solidity > 0.53 and count_defects == 0 and 0.4 < aspect_ratio < 0.69) and (direction not in ["oneFingerRight", "oneFingerLeft", "oneFingerUp"]):    
-        #     print(f"REFUSED1 Aspect ratio: {aspect_ratio}, Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
-        #     continue
+        if (solidity > 0.53 and count_defects == 0 and 0.4 < aspect_ratio < 0.69) and (direction not in ["oneFingerRight", "oneFingerLeft", "oneFingerUp"]):    
+            print(f"REFUSED1 Aspect ratio: {aspect_ratio}, Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
+            continue
         # # Filter out faces and other non-hand shapes (circular faces)
         # if (solidity > 0.6 and count_defects == 0 and aspect_ratio > 1) and (direction in ["oneFingerRight", "oneFingerLeft"]):
         #     print(f"REFUSED2 Aspect ratio: {aspect_ratio}, Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
