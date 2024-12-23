@@ -1,7 +1,7 @@
 import pyautogui
 import time
 last_action_time = 0
-action_cooldown = 1 
+action_cooldown = 1.5 
 
 def perform_action(gesture, gesture_mappings, direction_mappings, motion_mappings, direction=None, movement=None):
     global last_action_time
