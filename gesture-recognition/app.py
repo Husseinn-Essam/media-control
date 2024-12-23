@@ -64,7 +64,7 @@ def recognize_gesture():
     """Process the current frame for gesture recognition."""
     try:
         print(gesture_mappings)
-        gesture_recognition_loop(debug=True, frame=None, current_camera=settings["camera"], color_mode=settings["color_mode"], increased_ratio=settings["bounded_ratio"],gesture_mappings=gesture_mappings['gestureMappings'],direction_mappings=direction_mappings['directionMappings'],motion_mappings=motion_mappings['motionMappings'])
+        gesture_recognition_loop(safe_to_run=True, debug=True, frame=None, current_camera=settings["camera"], color_mode=settings["color_mode"], increased_ratio=settings["bounded_ratio"],gesture_mappings=gesture_mappings['gestureMappings'],direction_mappings=direction_mappings['directionMappings'],motion_mappings=motion_mappings['motionMappings'])
     except Exception as e:
         print(f"Error processing gesture: {e}")
         return jsonify({"error": "Internal server error"}), 500

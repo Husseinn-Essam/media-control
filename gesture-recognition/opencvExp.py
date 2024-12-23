@@ -49,7 +49,11 @@ def handle_key():
 
 cap = cv2.VideoCapture(0)
 g_current_camera = 0
-def gesture_recognition_loop(gesture_mappings,direction_mappings,motion_mappings,debug=True,frame=None,current_camera=0,color_mode="HSV",increased_ratio=0.25):
+def gesture_recognition_loop(gesture_mappings,direction_mappings,motion_mappings,debug=True,frame=None,current_camera=0,color_mode="HSV",increased_ratio=0.25, safe_to_run = False):
+    if not safe_to_run:
+        print("opencvExp: Autolaunch prevented!")
+        return
+    
     global cap, g_current_camera
     
     g_current_camera = current_camera
