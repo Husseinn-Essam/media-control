@@ -8,7 +8,19 @@ from math import ceil
 from customAlgos import calcSolidity, detect_pointing_direction, angle_between_points, convexity_defects
 
 
-def isolate_hand(capturedFrame, hand_segment):
+def isolate_hand(capturedFrame):
+    """
+    Isolates the hand in the input frame, making the rest of the frame black.
+    
+    Args:
+        capturedFrame (numpy.ndarray): Input frame.
+    
+    Returns:
+        numpy.ndarray: Output frame with only the hand visible, the rest black.
+    """
+    # apply preprocessing on frame
+    preprocessed_frame, thresh_frame = preprocess_frame(capturedFrame)
+    hand_segment = segment_hand(thresh_frame, preprocessed_frame)
 
     if hand_segment is not None and len(hand_segment) == 4:
         # Get the bounding box of the hand
@@ -17,11 +29,12 @@ def isolate_hand(capturedFrame, hand_segment):
         black_frame = np.zeros_like(capturedFrame)
         # we get the ROI (cropped image where hand is located)
         roi = capturedFrame[y:y + h, x:x + w]
-        # apply thresholding to get the mask of the hand in the roi
+        # apply thresholding to get the mask of the hand
         hand_mask = skin_thresholding(roi)
         # Place the isolated hand on the black frame which will have the same demensions as the input frame
         black_frame[y:y + h, x:x + w] = cv2.bitwise_and(roi, roi, mask=hand_mask)
         return black_frame
+
     else:
         # If no hand is detected, return a completely black frame
         return np.zeros_like(capturedFrame)
@@ -36,17 +49,13 @@ def segmenter(capturedFrame, mode='HSV',increase_ratio=0.25):
         roi = capturedFrame[hand_segment[1]:hand_segment[1] + hand_segment[3], hand_segment[0]:hand_segment[0] + hand_segment[2]]
         
         # Set the bottom rows to 0
-        # rows_roi, cols_roi, _ = roi.shape
-        # if rows_roi > 0 and int(rows_roi * 0.27) > 0:
-        #     roi[-int(rows_roi * 0.27):] = 0 
+        rows_roi, cols_roi, _ = roi.shape
+        if rows_roi > 0 and int(rows_roi * 0.27) > 0:
+            roi[-int(rows_roi * 0.27):] = 0 
             
+        isolated_hand = isolate_hand(capturedFrame)
         hand = skin_thresholding(roi) # the mask of the bounded hand (will be used for gesture recognition)
-        
-        # A completely dark frame except for the hand (still with skin color)
-        isolated_hand = isolate_hand(capturedFrame, hand_segment)
-        # Same as above but now in binary mask form
-        isolated_hand_mask = skin_thresholding(isolated_hand) 
-        
+        isolated_hand_mask = skin_thresholding(isolated_hand)  # get the mask of the hand (will be used for centroid tracking)  
         return hand, roi, capturedFrame, isolated_hand_mask
     else:
         return thresh_frame, capturedFrame
@@ -96,14 +105,14 @@ def segment_hand(thresh_frame, original_frame, increase_ratio=0.25, min_score_th
         x, y, w, h = cv2.boundingRect(contour)
         aspect_ratio = w / h
         
-        # Filter out faces and other non-hand shapes (rectangular faces)
-        if (solidity > 0.53 and count_defects == 0 and 0.4 < aspect_ratio < 0.69) and (direction not in ["oneFingerRight", "oneFingerLeft", "oneFingerUp"]):    
-            print(f"REFUSED1 Aspect ratio: {aspect_ratio}, Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
-            continue
-        # Filter out faces and other non-hand shapes (circular faces)
-        if (solidity > 0.6 and count_defects == 0 and aspect_ratio > 1) and (direction in ["oneFingerRight", "oneFingerLeft"]):
-            print(f"REFUSED2 Aspect ratio: {aspect_ratio}, Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
-            continue
+        # # Filter out faces and other non-hand shapes (rectangular faces)
+        # if (solidity > 0.53 and count_defects == 0 and 0.4 < aspect_ratio < 0.69) and (direction not in ["oneFingerRight", "oneFingerLeft", "oneFingerUp"]):    
+        #     print(f"REFUSED1 Aspect ratio: {aspect_ratio}, Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
+        #     continue
+        # # Filter out faces and other non-hand shapes (circular faces)
+        # if (solidity > 0.6 and count_defects == 0 and aspect_ratio > 1) and (direction in ["oneFingerRight", "oneFingerLeft"]):
+        #     print(f"REFUSED2 Aspect ratio: {aspect_ratio}, Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
+        #     continue
 
         # Check aspect ratio of bounding box
         print(f"ACCEPTED Aspect ratio: {aspect_ratio}, Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
@@ -159,12 +168,12 @@ def segment_hand(thresh_frame, original_frame, increase_ratio=0.25, min_score_th
         proximity_score = 1 / (1 + distance_to_center)  # Closer to center is better
 
         # Final score with reduced size weight
-        final_score = (0.2 * size_score +           # Reduced weight for size
-                    0.3 * aspect_ratio_score +   # Increased weight for aspect ratio
-                    0.3 * solidity_score +       # High weight for solidity
-                    0.15 * defect_score -        # Moderate weight for defects
-                    0.05 * circularity_penalty + # Slight penalty for circularity
-                    0.05 * proximity_score)      # Slight weight for proximity
+        final_score = (0.5 * size_score +           # Reduced weight for size
+               0.15 * aspect_ratio_score +   # Increased weight for adjusted aspect ratio
+               0.15 * solidity_score +       # High weight for solidity
+               0.15 * defect_score -        # Moderate weight for defects
+               0.05 * circularity_penalty + # Slight penalty for circularity
+               0.05 * proximity_score)      # Slight weight for proximity
 
 
         # Only add bounding box if final score is above threshold
