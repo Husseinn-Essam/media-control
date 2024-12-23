@@ -1,18 +1,18 @@
 {
     "gestureMappings": {
-        "fist": "unmapped",
-        "fiveFinger": "speed_down",
-        "fourFinger": "speed_up",
+        "fist": "previous_track",
+        "fiveFinger": "play_pause",
+        "fourFinger": "volume_down",
         "oneFinger": "unmapped",
-        "rockOn": "fast_forward",
-        "threeFinger": "rewind",
-        "twoFinger": "play_pause"
+        "rockOn": "next_track",
+        "threeFinger": "volume_up",
+        "twoFinger": "mute"
     },
     "directionMappings": {
-        "oneFingerDown": "action3",
-        "oneFingerLeft": "volume_up",
-        "oneFingerRight": "volume_down",
-        "oneFingerUp": "unmapped"
+        "oneFingerDown": "rewind",
+        "oneFingerLeft": "speed_up",
+        "oneFingerRight": "speed_down",
+        "oneFingerUp": "fast_forward"
     },
     "motionMappings": {
         "DOWN": "close",

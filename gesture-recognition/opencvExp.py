@@ -186,12 +186,12 @@ def gesture_recognition_loop(gesture_mappings,direction_mappings,motion_mappings
         # debug mode shows different types for frames
         if (debug == True):
             # display the frames
-            cv2.imshow("ROI", cv2.resize(roi, (300, 400)))
-            cv2.imshow("Threshold", cv2.resize(thresh, (300, 400)))
+            #cv2.imshow("ROI", cv2.resize(roi, (300, 400)))
+            #cv2.imshow("Threshold", cv2.resize(thresh, (300, 400)))
             cv2.imshow("Drawing", cv2.resize(drawing, (300, 400)))
-            cv2.imshow("capturedFrame", capturedFrame)
-            if full_frame_segmented is not None and np.any(full_frame_segmented):
-                cv2.imshow("full_frame_segmented", full_frame_segmented)
+            #cv2.imshow("capturedFrame", capturedFrame)
+            #if full_frame_segmented is not None and np.any(full_frame_segmented):
+                #cv2.imshow("full_frame_segmented", full_frame_segmented)
             cv2.imshow("Frame", frame)
         
         # motion_handle_roi_buffer_reset()
@@ -201,13 +201,13 @@ def gesture_recognition_loop(gesture_mappings,direction_mappings,motion_mappings
     cv2.destroyAllWindows()
 
 
-gesture_recognition_loop(debug=True,gesture_mappings={
-    "ONE": "unmapped",
-    "TWO": "mute",
-    "THREE": "volume_up",
-    "FOUR": "volume_down",
-    "FIVE": "play_pause",
-    "ROCK ON": "mute",
-    "FIST": "unmapped",
+# gesture_recognition_loop(debug=True,gesture_mappings={
+#     "ONE": "unmapped",
+#     "TWO": "mute",
+#     "THREE": "volume_up",
+#     "FOUR": "volume_down",
+#     "FIVE": "play_pause",
+#     "ROCK ON": "mute",
+#     "FIST": "unmapped",
 
-} ,direction_mappings=None,motion_mappings=None)
+# } ,direction_mappings=None,motion_mappings=None)

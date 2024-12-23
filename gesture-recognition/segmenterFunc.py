@@ -61,7 +61,7 @@ def segmenter(capturedFrame, mode='HSV',increase_ratio=0.25):
         return thresh_frame, capturedFrame
 
 
-def segment_hand(thresh_frame, original_frame, increase_ratio=0.25, min_score_threshold=0):
+def segment_hand(thresh_frame, original_frame, increase_ratio=0.25, min_score_threshold=0.2):
     # Convert to 8-bit integer if needed
     thresh_frame = thresh_frame.astype(np.uint8)
 
@@ -105,8 +105,8 @@ def segment_hand(thresh_frame, original_frame, increase_ratio=0.25, min_score_th
         x, y, w, h = cv2.boundingRect(contour)
         aspect_ratio = w / h
         
-        # # Filter out faces and other non-hand shapes (rectangular faces)
-        if (solidity > 0.53 and count_defects == 0 and 0.4 < aspect_ratio < 0.69) and (direction not in ["oneFingerRight", "oneFingerLeft", "oneFingerUp"]):    
+        # Filter out faces and other non-hand shapes (rectangular faces)
+        if (solidity > 0.53 and count_defects == 0 and aspect_ratio < 0.69) and (direction not in ["oneFingerRight", "oneFingerLeft", "oneFingerUp"]):    
             print(f"REFUSED1 Aspect ratio: {aspect_ratio}, Solidity: {solidity}, Defects: {count_defects}, Direction: {direction}")
             continue
         # # Filter out faces and other non-hand shapes (circular faces)
